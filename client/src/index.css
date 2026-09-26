@@ -246,8 +246,8 @@ input, select, textarea {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-dark);
@@ -258,4 +258,193 @@ input, select, textarea {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* ==========================================================================
+   Responsive Layout & Navigation Classes
+   ========================================================================== */
+
+.layout-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.layout-main {
+  flex: 1;
+  padding-bottom: 40px;
+}
+
+/* Desktop Header Navigation */
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-link.active {
+  color: var(--accent);
+  background: rgba(0, 210, 211, 0.1);
+  border: 1px solid rgba(0, 210, 211, 0.25);
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+}
+
+/* Responsive Table Container */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 5px;
+}
+
+/* Responsive Visibility Helpers */
+.hide-mobile {
+  display: block;
+}
+
+.hide-desktop {
+  display: none !important;
+}
+
+/* Responsive Container */
+.page-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* ==========================================================================
+   Tablet & Mobile Media Queries (< 768px)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Layout adjustments */
+  .layout-main {
+    padding-bottom: 85px !important; /* Space for fixed bottom navigation */
+  }
+
+  .desktop-nav {
+    display: none !important;
+  }
+
+  .mobile-bottom-nav {
+    display: flex !important;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .hide-desktop {
+    display: block !important;
+  }
+
+  /* Padding & Spacing */
+  .page-container {
+    padding: 16px 14px;
+  }
+
+  .glass-card {
+    padding: 18px 16px !important;
+    border-radius: 12px;
+  }
+
+  /* Typography scale */
+  h1 {
+    font-size: 1.6rem !important;
+  }
+
+  h2 {
+    font-size: 1.35rem !important;
+  }
+
+  h3 {
+    font-size: 1.15rem !important;
+  }
+
+  /* Ticker divider hide on mobile wrap */
+  .ticker-divider {
+    display: none !important;
+  }
+
+  /* Touch-friendly buttons and inputs */
+  .btn {
+    min-height: 42px;
+    padding: 10px 16px;
+  }
+
+  .form-input {
+    font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+    min-height: 44px;
+  }
+
+  /* Flex wrap containers */
+  .responsive-wrap {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Podium layout for leaderboard */
+  .podium-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ==========================================================================
+   Small Mobile Media Queries (< 480px)
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  body {
+    font-size: 0.95rem;
+  }
+
+  .page-container {
+    padding: 12px 10px;
+  }
+
+  .glass-card {
+    padding: 16px 12px !important;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-group-responsive {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* Timer widget countdown numbers */
+  .timer-digit {
+    font-size: 1.1rem !important;
+  }
 }

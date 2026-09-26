@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Zap, Coins, LogOut, ShieldCheck, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -18,10 +18,10 @@ const Navbar = () => {
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(13, 17, 23, 0.85)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(13, 17, 23, 0.9)',
+        backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--border-glass)',
-        padding: '12px 24px',
+        padding: '12px 16px',
       }}
     >
       <div
@@ -31,10 +31,11 @@ const Navbar = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: '12px',
         }}
       >
         {/* Brand Logo */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div
             style={{
               width: '36px',
@@ -47,15 +48,39 @@ const Navbar = () => {
               boxShadow: 'var(--shadow-glow)',
             }}
           >
-            <Zap size={22} color="#ffffff" />
+            <Zap size={20} color="#ffffff" />
           </div>
-          <span style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
+          <span style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.3rem)', fontWeight: 800, letterSpacing: '-0.5px' }}>
             Viral<span className="text-gradient">Recharge</span>
           </span>
         </Link>
 
-        {/* Navigation / Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Desktop Navigation Links (Hidden on screens <= 768px via CSS) */}
+        {isAuthenticated && (
+          <nav className="desktop-nav">
+            <NavLink to="/dashboard" className="nav-link">
+              Dashboard
+            </NavLink>
+            <NavLink to="/tasks" className="nav-link">
+              Earn
+            </NavLink>
+            <NavLink to="/referrals" className="nav-link">
+              4x Referrals
+            </NavLink>
+            <NavLink to="/recharge" className="nav-link">
+              Recharge
+            </NavLink>
+            <NavLink to="/leaderboard" className="nav-link">
+              Leaderboard
+            </NavLink>
+            <NavLink to="/history" className="nav-link">
+              History
+            </NavLink>
+          </nav>
+        )}
+
+        {/* Right Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {isAuthenticated ? (
             <>
               {/* Credits Balance Pill */}

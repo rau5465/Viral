@@ -95,7 +95,7 @@ const TransactionHistory = () => {
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="form-input"
-          style={{ width: 'auto', padding: '8px 12px', fontSize: '0.85rem' }}
+          style={{ width: 'auto', flex: '1 1 140px', padding: '8px 12px', fontSize: '0.85rem' }}
         >
           <option value="">All Categories</option>
           <option value="signup_bonus">Signup Bonus</option>
@@ -110,7 +110,7 @@ const TransactionHistory = () => {
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           className="form-input"
-          style={{ width: 'auto', padding: '8px 12px', fontSize: '0.85rem' }}
+          style={{ width: 'auto', flex: '1 1 140px', padding: '8px 12px', fontSize: '0.85rem' }}
         >
           <option value="">Credit & Debit</option>
           <option value="credit">Credits In (+)</option>
@@ -140,6 +140,8 @@ const TransactionHistory = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '10px',
                     padding: '14px 18px',
                     borderRadius: '10px',
                     background: 'rgba(255, 255, 255, 0.02)',

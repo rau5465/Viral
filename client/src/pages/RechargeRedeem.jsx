@@ -284,6 +284,8 @@ const RechargeRedeem = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
                   padding: '14px 18px',
                   borderRadius: '10px',
                   background: 'rgba(255, 255, 255, 0.02)',

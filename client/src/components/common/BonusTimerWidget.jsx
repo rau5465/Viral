@@ -195,7 +195,7 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
           <Clock size={20} color="#ff7675" />
           <div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Time Left</div>
-            <div style={{ fontFamily: 'monospace', fontSize: '1.3rem', fontWeight: 800, color: '#ff7675' }}>
+            <div className="timer-digit" style={{ fontFamily: 'monospace', fontSize: '1.3rem', fontWeight: 800, color: '#ff7675' }}>
               {formatTime(timeLeft)}
             </div>
           </div>
@@ -234,15 +234,15 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
       </div>
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="btn-group-responsive" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
         <button
           onClick={handleWhatsAppShare}
           className="btn btn-primary"
-          style={{ background: '#25D366', color: '#fff', boxShadow: '0 4px 15px rgba(37, 211, 102, 0.4)' }}
+          style={{ background: '#25D366', color: '#fff', boxShadow: '0 4px 15px rgba(37, 211, 102, 0.4)', flex: '1 1 160px' }}
         >
           <Share2 size={16} /> Share on WhatsApp
         </button>
-        <button onClick={handleCopyLink} className="btn btn-secondary">
+        <button onClick={handleCopyLink} className="btn btn-secondary" style={{ flex: '1 1 160px' }}>
           Copy Referral Link
         </button>
       </div>

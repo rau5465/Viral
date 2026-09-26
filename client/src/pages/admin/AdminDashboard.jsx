@@ -321,24 +321,24 @@ const AdminDashboard = () => {
       {/* TAB 2: USER MANAGEMENT */}
       {activeTab === 'users' && (
         <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '1.2rem' }}>User Directory & Moderation</h3>
-            <form onSubmit={handleUserSearch} style={{ display: 'flex', gap: '8px' }}>
+            <form onSubmit={handleUserSearch} style={{ display: 'flex', gap: '8px', flex: '1 1 240px', maxWidth: '380px' }}>
               <input
                 type="text"
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
                 placeholder="Search name, email, phone, code..."
                 className="form-input"
-                style={{ padding: '8px 12px', fontSize: '0.85rem', width: '250px' }}
+                style={{ padding: '8px 12px', fontSize: '0.85rem', flex: 1, minWidth: '160px' }}
               />
-              <button type="submit" className="btn btn-secondary" style={{ padding: '0 12px' }}>
+              <button type="submit" className="btn btn-secondary" style={{ padding: '0 14px', flexShrink: 0 }}>
                 <Search size={16} />
               </button>
             </form>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-responsive">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-glass)', textAlign: 'left', color: 'var(--text-muted)' }}>
@@ -464,6 +464,8 @@ const AdminDashboard = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px',
                   padding: '16px',
                   borderRadius: '10px',
                   background: 'rgba(255, 255, 255, 0.02)',
@@ -603,6 +605,8 @@ const AdminDashboard = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px',
                   padding: '14px 18px',
                   borderRadius: '10px',
                   background: 'rgba(255, 255, 255, 0.02)',
@@ -618,7 +622,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span className={`badge badge-${rc.status === 'completed' ? 'success' : rc.status === 'pending' ? 'warning' : 'danger'}`}>
                     {rc.status}
                   </span>
@@ -645,7 +649,7 @@ const AdminDashboard = () => {
 
           {/* New Announcement Form */}
           <form onSubmit={handleCreateAnnouncement} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
               <input
                 type="text"
                 required

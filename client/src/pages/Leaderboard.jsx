@@ -38,6 +38,7 @@ const Leaderboard = () => {
       {/* Top 3 Podium */}
       {top3.length > 0 && (
         <div
+          className="podium-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
@@ -140,6 +141,8 @@ const Leaderboard = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '8px',
                   padding: '12px 18px',
                   borderRadius: '10px',
                   background: 'rgba(255, 255, 255, 0.02)',

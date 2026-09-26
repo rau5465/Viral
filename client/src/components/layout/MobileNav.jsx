@@ -18,6 +18,7 @@ const MobileNav = () => {
 
   return (
     <nav
+      className="mobile-bottom-nav"
       style={{
         position: 'fixed',
         bottom: 0,
@@ -27,7 +28,6 @@ const MobileNav = () => {
         background: 'rgba(13, 17, 23, 0.95)',
         backdropFilter: 'blur(16px)',
         borderTop: '1px solid var(--border-glass)',
-        display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
         padding: '8px 0',

@@ -5,9 +5,9 @@ import MobileNav from './MobileNav';
 
 const Layout = ({ children }) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="layout-root">
       <Navbar />
-      <main style={{ flex: 1, paddingBottom: '30px' }}>
+      <main className="layout-main">
         {children}
       </main>
       <Footer />

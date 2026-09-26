@@ -145,7 +145,7 @@ const Landing = () => {
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Users Joined Today</div>
             </div>
           </div>
-          <div style={{ width: '1px', height: '30px', background: 'var(--border-glass)' }} />
+          <div className="ticker-divider" style={{ width: '1px', height: '30px', background: 'var(--border-glass)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Smartphone size={22} color="#00d2d3" />
             <div style={{ textAlign: 'left' }}>
@@ -153,7 +153,7 @@ const Landing = () => {
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Recharges Sent</div>
             </div>
           </div>
-          <div style={{ width: '1px', height: '30px', background: 'var(--border-glass)' }} />
+          <div className="ticker-divider" style={{ width: '1px', height: '30px', background: 'var(--border-glass)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <ShieldCheck size={22} color="#fdcb6e" />
             <div style={{ textAlign: 'left' }}>
