@@ -24,7 +24,15 @@ ViralRecharge is a viral referral-based platform where users earn credits throug
 - Real-time credit updates with animations
 - Gamification (levels, leaderboards, badges)
 
+## YouTube Subscription Verification
+- Google OAuth 2.0 (`youtube.readonly`, `userinfo.profile`, `userinfo.email`)
+- Verification via YouTube Data API v3 (`subscriptions.list` with `mine=true` & `forChannelId={channelId}`)
+- Multi-partner channel support (`partner_channels`)
+- Server-side AES-256-GCM token encryption (`user_youtube_accounts`)
+- Automatic OAuth token refresh, revoked access detection & anti-duplicate claim ledger (`user_youtube_subscriptions`)
+
 ## Important Files
 - `Plan.md` — Full project plan with task list
 - `logs.md` — Feature & change log
 - `commands_history.md` — User command history
+

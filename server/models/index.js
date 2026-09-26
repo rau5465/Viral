@@ -9,6 +9,9 @@ const Announcement = require('./Announcement');
 const OtpCode = require('./OtpCode');
 const Session = require('./Session');
 const AdminLog = require('./AdminLog');
+const PartnerChannel = require('./PartnerChannel');
+const UserYouTubeAccount = require('./UserYouTubeAccount');
+const UserYouTubeSubscription = require('./UserYouTubeSubscription');
 
 // 1. User <-> Referral
 User.hasMany(Referral, { foreignKey: 'referrer_id', as: 'referredUsers' });
@@ -50,6 +53,26 @@ AdminLog.belongsTo(User, { foreignKey: 'admin_id', as: 'admin' });
 // 9. User self-referral link
 User.belongsTo(User, { foreignKey: 'referred_by', as: 'upline' });
 
+// 10. User <-> UserYouTubeAccount (1-to-1)
+User.hasOne(UserYouTubeAccount, { foreignKey: 'user_id', as: 'youtubeAccount' });
+UserYouTubeAccount.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// 11. User <-> PartnerChannel (Partner can manage multiple channels)
+User.hasMany(PartnerChannel, { foreignKey: 'partner_id', as: 'partnerChannels' });
+PartnerChannel.belongsTo(User, { foreignKey: 'partner_id', as: 'partner' });
+
+// 12. Task <-> PartnerChannel (Optional linkage to tasks)
+Task.hasOne(PartnerChannel, { foreignKey: 'task_id', as: 'partnerChannel' });
+PartnerChannel.belongsTo(Task, { foreignKey: 'task_id', as: 'task' });
+
+// 13. User <-> UserYouTubeSubscription
+User.hasMany(UserYouTubeSubscription, { foreignKey: 'user_id', as: 'youtubeSubscriptions' });
+UserYouTubeSubscription.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// 14. PartnerChannel <-> UserYouTubeSubscription
+PartnerChannel.hasMany(UserYouTubeSubscription, { foreignKey: 'partner_channel_id', as: 'userSubscriptions' });
+UserYouTubeSubscription.belongsTo(PartnerChannel, { foreignKey: 'partner_channel_id', as: 'partnerChannel' });
+
 module.exports = {
   sequelize,
   User,
@@ -62,4 +85,7 @@ module.exports = {
   OtpCode,
   Session,
   AdminLog,
+  PartnerChannel,
+  UserYouTubeAccount,
+  UserYouTubeSubscription,
 };

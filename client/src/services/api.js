@@ -89,6 +89,18 @@ export const apiService = {
   getTransactions: (params = {}) => API.get('/transactions', { params }),
   getTransactionSummary: () => API.get('/transactions/summary'),
 
+  // YouTube Verification
+  getYouTubeChannels: () => API.get('/youtube/channels'),
+  getYouTubeSubscriptionStatus: (channelId) => API.get(`/youtube/subscription-status/${channelId}`),
+  verifyAndClaimYouTube: (channelId) => API.post(`/youtube/verify-and-claim/${channelId}`),
+  getYouTubeAuthUrl: () => API.get('/youtube/auth-url'),
+  getYouTubeStatus: () => API.get('/youtube/status'),
+  disconnectYouTube: () => API.post('/youtube/disconnect'),
+  verifyAllYouTube: () => API.post('/youtube/verify-all'),
+  addYouTubeChannel: (data) => API.post('/youtube/partner/channels', data),
+  updateYouTubeChannel: (id, data) => API.put(`/youtube/partner/channels/${id}`, data),
+  deleteYouTubeChannel: (id) => API.delete(`/youtube/partner/channels/${id}`),
+
   // Admin
   getAdminStats: () => API.get('/admin/dashboard'),
   getAdminUsers: (params = {}) => API.get('/admin/users', { params }),

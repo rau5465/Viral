@@ -38,26 +38,28 @@ async function initDatabase() {
     // 3. Switch to target database
     await connection.changeUser({ database: dbName });
 
-    // 4. Run Schema Migration
-    const schemaPath = path.resolve(__dirname, '../../database/migrations/001_initial_schema.sql');
-    if (fs.existsSync(schemaPath)) {
-      console.log('📜 Executing schema migration (001_initial_schema.sql)...');
-      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-      await connection.query(schemaSql);
-      console.log('✅ Schema migration executed successfully.');
-    } else {
-      console.warn(`⚠️ Schema migration file not found at ${schemaPath}`);
+    // 4. Run Schema Migrations
+    const migrationsDir = path.resolve(__dirname, '../../database/migrations');
+    if (fs.existsSync(migrationsDir)) {
+      const migrationFiles = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
+      for (const file of migrationFiles) {
+        console.log(`📜 Executing schema migration (${file})...`);
+        const schemaSql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+        await connection.query(schemaSql);
+        console.log(`✅ Schema migration ${file} executed successfully.`);
+      }
     }
 
     // 5. Run Seed Data
-    const seedPath = path.resolve(__dirname, '../../database/seeds/001_seed_data.sql');
-    if (fs.existsSync(seedPath)) {
-      console.log('🌱 Executing initial seed data (001_seed_data.sql)...');
-      const seedSql = fs.readFileSync(seedPath, 'utf8');
-      await connection.query(seedSql);
-      console.log('✅ Seed data inserted successfully.');
-    } else {
-      console.warn(`⚠️ Seed file not found at ${seedPath}`);
+    const seedsDir = path.resolve(__dirname, '../../database/seeds');
+    if (fs.existsSync(seedsDir)) {
+      const seedFiles = fs.readdirSync(seedsDir).filter(f => f.endsWith('.sql')).sort();
+      for (const file of seedFiles) {
+        console.log(`🌱 Executing seed data (${file})...`);
+        const seedSql = fs.readFileSync(path.join(seedsDir, file), 'utf8');
+        await connection.query(seedSql);
+        console.log(`✅ Seed data ${file} inserted successfully.`);
+      }
     }
 
     // 6. Verify Tables

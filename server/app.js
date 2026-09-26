@@ -13,6 +13,7 @@ const referralRoutes = require('./routes/referralRoutes');
 const rechargeRoutes = require('./routes/rechargeRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const youtubeRoutes = require('./routes/youtubeRoutes');
 
 const errorHandler = require('./middleware/errorMiddleware');
 const AppError = require('./utils/AppError');
@@ -81,6 +82,7 @@ app.use('/api/referrals', referralRoutes);
 app.use('/api/recharges', rechargeRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/youtube', youtubeRoutes);
 
 // 404 Handler
 app.all('*', (req, res, next) => {

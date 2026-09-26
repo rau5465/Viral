@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import TaskExecutionModal from '../components/tasks/TaskExecutionModal';
+import YouTubeVerificationSection from '../components/youtube/YouTubeVerificationSection';
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
@@ -111,6 +112,11 @@ const Tasks = () => {
           </button>
         ))}
       </div>
+
+      {/* Featured YouTube Partner Channels Verification Section */}
+      {(selectedCategory === 'all' || selectedCategory === 'youtube_subscribe') && (
+        <YouTubeVerificationSection />
+      )}
 
       {/* Task Grid */}
       {loading ? (

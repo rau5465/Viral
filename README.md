@@ -436,7 +436,80 @@ Small Mobile (≤ 480px)
 - `DELETE /api/admin/announcements/:id` — Delete an announcement
 - `GET /api/admin/logs` — Review audit trail of administrator activities
 
+### YouTube Subscription Verification (`/api/youtube`)
+- `GET /api/youtube/channels` — List all active Partner YouTube channels with user subscription & claim status
+- `GET /api/youtube/subscription-status/:channelId` — Check whether the authenticated user is subscribed to a specific channel
+- `POST /api/youtube/verify-and-claim/:channelId` — Verify subscription via YouTube Data API v3 and claim credit reward
+- `GET /api/youtube/auth-url` — Generate Google OAuth 2.0 authorization consent URL
+- `GET /api/youtube/callback` — Google OAuth 2.0 redirect handler (exchanges code for encrypted tokens)
+- `GET /api/youtube/status` — Get currently connected YouTube/Google profile details
+- `POST /api/youtube/disconnect` — Revoke and disconnect connected YouTube account
+- `POST /api/youtube/verify-all` — Batch verify subscriptions across all active partner channels
+- `POST /api/youtube/partner/channels` — Add a new Partner YouTube Channel (Admin)
+- `PUT /api/youtube/partner/channels/:id` — Update Partner YouTube Channel settings (Admin)
+- `DELETE /api/youtube/partner/channels/:id` — Remove Partner YouTube Channel (Admin)
+
 ---
+
+## 📺 YouTube Subscription Verification System
+
+ViralRecharge features a high-fidelity YouTube subscription verification system powered by **Google OAuth 2.0** and the **YouTube Data API v3**:
+
+```
+Logged-in User
+      │
+      ├─── 1. Connect YouTube Account (Google OAuth 2.0)
+      │       Scopes: youtube.readonly, userinfo.profile, userinfo.email
+      │       Tokens encrypted with AES-256-GCM in MySQL (never exposed to client)
+      │
+      ├─── 2. User Visits Partner Channel & Subscribes on YouTube
+      │
+      ├─── 3. User clicks "Verify & Claim"
+      │       Backend executes youtube.subscriptions.list:
+      │       part='snippet', mine=true, forChannelId=partnerChannelId
+      │
+      ├─── 4. Subscribed: YES ──► Awards +50 CR, logs transaction, checks 4x multiplier
+      │
+      └─── 5. Subscribed: NO  ──► Prompt to subscribe on YouTube & retry
+```
+
+### Why Authenticated User Verification (`mine=true`)?
+- **Privacy Compliance**: YouTube by default keeps subscriptions private for >90% of all users. If an application relies on the channel owner's subscriber list, Google hides private subscribers, making verification impossible.
+- **Accurate & Real-Time**: By asking the user for `youtube.readonly` access and querying with `mine=true` and `forChannelId={partnerChannelId}`, the YouTube API returns the subscription resource even if the user's subscriptions are private!
+- **Zero Proof Overhead**: Users don't need to upload screenshots or wait for manual admin review.
+
+### Security & Token Lifecycle
+1. **Server-Side Encryption**: `access_token` and `refresh_token` are encrypted at rest using AES-256-GCM (`server/utils/crypto.js`). Tokens are never sent in API responses (`toJSON` strips them automatically).
+2. **Auto-Refresh**: Expired tokens are refreshed automatically in the background using Google `OAuth2Client` before making YouTube API calls.
+3. **Revocation Detection**: If a user disconnects or revokes permissions in their Google Account settings, the backend captures `invalid_grant` and gracefully prompts the user to reconnect.
+4. **Anti-Fraud & Ledger**: Subscriptions and rewards are tracked in `user_youtube_subscriptions` with atomic transactions, preventing users from claiming credits multiple times for the same channel.
+5. **Multi-Partner Channels**: A single partner or administrator can register multiple YouTube channels under their account, and the system verifies subscriptions across all of them.
+
+### Google Cloud Console Configuration Guide
+To connect live Google credentials:
+1. Open the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a project and enable the **YouTube Data API v3**.
+3. Under **APIs & Services > Credentials**, create an **OAuth 2.0 Client ID** (Web application).
+4. Add Authorized redirect URI:
+   `http://localhost:5000/api/youtube/callback`
+5. Copy the Client ID and Client Secret into `server/.env`:
+   ```env
+   GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your_client_secret
+   GOOGLE_CALLBACK_URL=http://localhost:5000/api/youtube/callback
+   ENCRYPTION_SECRET=your_aes256_encryption_key
+   ```
+*(Note: If Google credentials are not set, a built-in development simulation mode automatically activates so developers can test the entire UI and credit redemption lifecycle without being blocked).*
+
+### Run the YouTube Test Suite
+Verify all 13 components of the YouTube Verification System:
+```bash
+cd server
+node scripts/testYouTubeSystem.js
+```
+
+---
+
 
 ## 🛡️ Security & Anti-Fraud Engine
 
