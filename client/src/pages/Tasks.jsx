@@ -8,6 +8,8 @@ import {
   ThumbsUp,
   Sparkles,
   ArrowRight,
+  RefreshCw,
+  Zap,
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import TaskExecutionModal from '../components/tasks/TaskExecutionModal';
@@ -16,17 +18,22 @@ import YouTubeVerificationSection from '../components/youtube/YouTubeVerificatio
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [fromCache, setFromCache] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [activeTask, setActiveTask] = useState(null);
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (force = false) => {
+    if (force) setRefreshing(true);
     try {
-      const res = await apiService.getTasks();
-      setTasks(res.tasks);
+      const res = await apiService.getTasks(force);
+      setTasks(res.tasks || []);
+      setFromCache(!!res.fromCache);
     } catch (err) {
       console.error('Failed to load tasks:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -71,13 +78,83 @@ const Tasks = () => {
   return (
     <div style={{ maxWidth: '1100px', margin: '30px auto', padding: '0 20px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <CheckSquare size={28} color="var(--primary)" /> Earn Credits
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          Complete simple micro-tasks to accumulate recharge credits in real-time.
-        </p>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '24px',
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckSquare size={28} color="var(--primary)" /> Earn Credits
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+            Complete simple micro-tasks to accumulate recharge credits in real-time.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {fromCache ? (
+            <span
+              style={{
+                fontSize: '0.75rem',
+                color: '#10b981',
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '20px',
+                padding: '4px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <Zap size={12} />
+              <span>Offline Device Cached</span>
+            </span>
+          ) : (
+            <span
+              style={{
+                fontSize: '0.75rem',
+                color: '#6366f1',
+                background: 'rgba(99, 102, 241, 0.1)',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                borderRadius: '20px',
+                padding: '4px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <Sparkles size={12} />
+              <span>Live Synced</span>
+            </span>
+          )}
+
+          <button
+            onClick={() => fetchTasks(true)}
+            disabled={refreshing}
+            title="Force refresh tasks from server"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border-glass)',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              color: 'var(--text-muted)',
+              cursor: refreshing ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.8rem',
+            }}
+          >
+            <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
+            <span>Sync</span>
+          </button>
+        </div>
       </div>
 
       {/* Category Filter Pills */}

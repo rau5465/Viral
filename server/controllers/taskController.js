@@ -1,15 +1,57 @@
 const { Task } = require('../models');
-const { getAvailableTasks, startTask, completeTask } = require('../services/taskService');
+const {
+  getAvailableTasks,
+  getTasksVersion,
+  getUserCompletionsToday,
+  startTask,
+  completeTask,
+} = require('../services/taskService');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
 
-// List available tasks with user status
-const getTasks = asyncHandler(async (req, res, _next) => {
-  const tasks = await getAvailableTasks(req.user.id);
+// Get lightweight current task catalog version (~30 bytes)
+const getCatalogVersion = asyncHandler(async (_req, res, _next) => {
+  const version = await getTasksVersion();
   res.status(200).json({
     status: 'success',
-    count: tasks.length,
-    tasks,
+    version,
+  });
+});
+
+// Get user's today completions
+const getMyCompletionsToday = asyncHandler(async (req, res, _next) => {
+  const completions = await getUserCompletionsToday(req.user.id);
+  res.status(200).json({
+    status: 'success',
+    completions,
+  });
+});
+
+// List available tasks with version-aware conditional caching
+const getTasks = asyncHandler(async (req, res, _next) => {
+  const clientVersion = req.query.version || req.headers['if-none-match'];
+  const result = await getAvailableTasks(req.user.id, clientVersion);
+
+  // Set ETag header for HTTP caching
+  res.setHeader('ETag', `"${result.version}"`);
+  res.setHeader('Cache-Control', 'private, no-cache');
+
+  if (result.notModified) {
+    return res.status(200).json({
+      status: 'success',
+      notModified: true,
+      version: result.version,
+      completionsToday: result.completionsToday,
+    });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    notModified: false,
+    version: result.version,
+    count: result.tasks.length,
+    tasks: result.tasks,
+    completionsToday: result.completionsToday,
   });
 });
 
@@ -46,6 +88,8 @@ const completeTaskSession = asyncHandler(async (req, res, _next) => {
 });
 
 module.exports = {
+  getCatalogVersion,
+  getMyCompletionsToday,
   getTasks,
   getTaskDetails,
   startTaskSession,

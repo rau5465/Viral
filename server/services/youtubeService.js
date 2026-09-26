@@ -13,6 +13,7 @@ const { encryptToken, decryptToken } = require('../utils/crypto');
 const { awardCredits } = require('./creditService');
 const { checkAndApplyBonusMultiplier } = require('./bonusService');
 const AppError = require('../utils/AppError');
+const { getOrSet, del, acquireLock, releaseLock } = require('../config/redis');
 require('dotenv').config();
 
 // OAuth Configuration
@@ -484,9 +485,16 @@ const checkUserSubscription = async (userId, channelId) => {
  * @returns {Promise<object>}
  */
 const verifyAndClaimReward = async (userId, channelId) => {
-  const partnerChannel = await PartnerChannel.findOne({
-    where: { channel_id: channelId, is_active: true },
-  });
+  const lockKey = `yt:claim:${userId}:${channelId}`;
+  const lockToken = await acquireLock(lockKey, 10);
+  if (!lockToken) {
+    throw new AppError('Verification claim already in progress for this channel. Please wait.', 429);
+  }
+
+  try {
+    const partnerChannel = await PartnerChannel.findOne({
+      where: { channel_id: channelId, is_active: true },
+    });
 
   if (!partnerChannel) {
     throw new AppError('Partner channel not found or currently inactive.', 404);
@@ -598,6 +606,9 @@ const verifyAndClaimReward = async (userId, channelId) => {
     channelTitle: partnerChannel.channel_title,
     message: `🎉 Verified! You have earned +${rewardAmount} credits for subscribing to "${partnerChannel.channel_title}".`,
   };
+} finally {
+  await releaseLock(lockKey, lockToken);
+}
 };
 
 /**
@@ -606,10 +617,17 @@ const verifyAndClaimReward = async (userId, channelId) => {
  * @returns {Promise<Array>}
  */
 const getPartnerChannels = async (userId = null) => {
-  const channels = await PartnerChannel.findAll({
-    where: { is_active: true },
-    order: [['credits_reward', 'DESC']],
-  });
+  const channels = await getOrSet(
+    'cache:youtube:partner_channels:active',
+    async () => {
+      const dbChannels = await PartnerChannel.findAll({
+        where: { is_active: true },
+        order: [['credits_reward', 'DESC']],
+      });
+      return dbChannels.map((c) => c.toJSON());
+    },
+    300
+  );
 
   let userAccount = null;
   let userSubscriptions = [];
@@ -772,7 +790,16 @@ const addPartnerChannel = async (partnerId, data) => {
     is_active: true,
   });
 
+  await invalidatePartnerChannelsCache();
   return newChannel;
+};
+
+const invalidatePartnerChannelsCache = async () => {
+  try {
+    await del('cache:youtube:partner_channels:active');
+  } catch (err) {
+    console.warn('[invalidatePartnerChannelsCache error]', err.message);
+  }
 };
 
 const updatePartnerChannel = async (id, data) => {
@@ -798,6 +825,7 @@ const updatePartnerChannel = async (id, data) => {
   });
 
   await channel.save();
+  await invalidatePartnerChannelsCache();
   return channel;
 };
 
@@ -808,6 +836,7 @@ const deletePartnerChannel = async (id) => {
   }
 
   await channel.destroy();
+  await invalidatePartnerChannelsCache();
   return { success: true, message: 'Partner channel removed successfully.' };
 };
 
@@ -824,4 +853,5 @@ module.exports = {
   addPartnerChannel,
   updatePartnerChannel,
   deletePartnerChannel,
+  invalidatePartnerChannelsCache,
 };

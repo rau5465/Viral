@@ -2,8 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const { sequelize } = require('./config/db');
+const compression = require('compression');
+const { sequelize, getDbPoolStatus } = require('./config/db');
+const { getRedisHealth } = require('./config/redis');
+const { apiLimiter } = require('./middleware/rateLimiters');
 
 // Route Handlers
 const authRoutes = require('./routes/authRoutes');
@@ -30,29 +32,27 @@ app.use(
   })
 );
 
-// Logging Middleware
+// High-Traffic HTTP Compression (gzip / deflate for responses > 1KB)
+app.use(
+  compression({
+    threshold: 1024,
+    level: 6,
+  })
+);
+
+// Logging Middleware (streamlined in high-load production)
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 }
 
 // Body Parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Global Rate Limiter
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 500,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    status: 'error',
-    message: 'Too many requests, please try again later.',
-  },
-});
+// Global Distributed Rate Limiter
 app.use('/api', apiLimiter);
 
-// Health Check API
+// High-Traffic Comprehensive Health & Telemetry Check
 app.get('/api/health', async (req, res) => {
   let dbStatus = 'disconnected';
   try {
@@ -62,14 +62,29 @@ app.get('/api/health', async (req, res) => {
     dbStatus = `error: ${error.message}`;
   }
 
+  const redisHealth = await getRedisHealth();
+  const dbPool = getDbPoolStatus();
+  const memUsage = process.memoryUsage();
+
   res.status(200).json({
     status: 'success',
     app: 'ViralRecharge API',
-    uptime: process.uptime(),
+    uptime: `${Math.floor(process.uptime())}s`,
     timestamp: new Date().toISOString(),
     database: {
       status: dbStatus,
       name: process.env.DB_NAME || 'viral',
+      pool: dbPool,
+    },
+    redis: redisHealth,
+    process: {
+      pid: process.pid,
+      nodeVersion: process.version,
+      memory: {
+        rssMB: (memUsage.rss / 1024 / 1024).toFixed(2),
+        heapUsedMB: (memUsage.heapUsed / 1024 / 1024).toFixed(2),
+        heapTotalMB: (memUsage.heapTotal / 1024 / 1024).toFixed(2),
+      },
     },
   });
 });

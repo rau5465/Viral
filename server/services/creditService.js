@@ -1,4 +1,5 @@
 const { User, Transaction, sequelize } = require('../models');
+const { del } = require('../config/redis');
 const AppError = require('../utils/AppError');
 
 // Calculate user level based on total credits earned
@@ -7,6 +8,23 @@ const calculateLevel = (totalEarned) => {
   if (totalEarned >= 500) return 'gold';
   if (totalEarned >= 200) return 'silver';
   return 'bronze';
+};
+
+// Evict user caches and dynamic stats caches
+const evictCaches = async (userId) => {
+  try {
+    await del(
+      `cache:user:auth:${userId}`,
+      `cache:user:profile:${userId}`,
+      `cache:user:dashboard:${userId}`,
+      'cache:leaderboard:10',
+      'cache:leaderboard:20',
+      'cache:leaderboard:50',
+      'cache:admin:dashboard:stats'
+    );
+  } catch (err) {
+    console.warn('[Cache eviction error in creditService]', err.message);
+  }
 };
 
 // Award credits to user and log transaction
@@ -49,11 +67,17 @@ const awardCredits = async ({
     return { user, transaction: tx };
   };
 
+  let result;
   if (transaction) {
-    return await execute(transaction);
+    result = await execute(transaction);
   } else {
-    return await sequelize.transaction(execute);
+    result = await sequelize.transaction(execute);
   }
+
+  // Evict stale user and leaderboard caches
+  evictCaches(userId).catch(() => {});
+
+  return result;
 };
 
 // Deduct credits from user (for recharges, penalties)
@@ -98,11 +122,17 @@ const deductCredits = async ({
     return { user, transaction: tx };
   };
 
+  let result;
   if (transaction) {
-    return await execute(transaction);
+    result = await execute(transaction);
   } else {
-    return await sequelize.transaction(execute);
+    result = await sequelize.transaction(execute);
   }
+
+  // Evict stale user cache
+  evictCaches(userId).catch(() => {});
+
+  return result;
 };
 
 // Get current balance and summary

@@ -1,6 +1,7 @@
 const { User, Referral, sequelize } = require('../models');
 const { awardCredits } = require('./creditService');
 const { checkAndApplyBonusMultiplier } = require('./bonusService');
+const { getOrSet, del } = require('../config/redis');
 const AppError = require('../utils/AppError');
 
 // Get referral details for a user
@@ -82,37 +83,49 @@ const awardReferralReward = async (referrerId, referredUserId) => {
   // Check if 4x bonus triggered for the referrer
   const bonusResult = await checkAndApplyBonusMultiplier(referrerId);
 
+  // Invalidate cached leaderboard
+  del('cache:leaderboard:10', 'cache:leaderboard:20', 'cache:leaderboard:50').catch(() => {});
+
   return {
     referralAwarded: rewardAmount,
     bonusResult,
   };
 };
 
-// Global Leaderboard (Top Referrers)
+// Global Leaderboard (Top Referrers) - High-speed Redis Cached (60s TTL)
 const getLeaderboard = async (limit = 10) => {
-  const [results] = await sequelize.query(`
-    SELECT 
-      u.id, 
-      u.full_name, 
-      u.level, 
-      u.total_earned,
-      COUNT(r.id) AS total_referrals
-    FROM users u
-    LEFT JOIN referrals r ON u.id = r.referrer_id
-    WHERE u.role = 'user' AND u.is_banned = FALSE
-    GROUP BY u.id, u.full_name, u.level, u.total_earned
-    ORDER BY total_referrals DESC, u.total_earned DESC
-    LIMIT ${parseInt(limit, 10) || 10}
-  `);
+  const safeLimit = parseInt(limit, 10) || 10;
+  const cacheKey = `cache:leaderboard:${safeLimit}`;
 
-  return results.map((row, index) => ({
-    rank: index + 1,
-    id: row.id,
-    name: row.full_name,
-    level: row.level,
-    totalEarned: row.total_earned,
-    totalReferrals: parseInt(row.total_referrals, 10),
-  }));
+  return await getOrSet(
+    cacheKey,
+    async () => {
+      const [results] = await sequelize.query(`
+        SELECT 
+          u.id, 
+          u.full_name, 
+          u.level, 
+          u.total_earned,
+          COUNT(r.id) AS total_referrals
+        FROM users u
+        LEFT JOIN referrals r ON u.id = r.referrer_id
+        WHERE u.role = 'user' AND u.is_banned = FALSE
+        GROUP BY u.id, u.full_name, u.level, u.total_earned
+        ORDER BY total_referrals DESC, u.total_earned DESC
+        LIMIT ${safeLimit}
+      `);
+
+      return results.map((row, index) => ({
+        rank: index + 1,
+        id: row.id,
+        name: row.full_name,
+        level: row.level,
+        totalEarned: row.total_earned,
+        totalReferrals: parseInt(row.total_referrals, 10),
+      }));
+    },
+    60
+  );
 };
 
 module.exports = {

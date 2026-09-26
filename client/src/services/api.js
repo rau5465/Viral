@@ -68,8 +68,64 @@ export const apiService = {
   updateProfile: (data) => API.put('/user/profile', data),
   getBalance: () => API.get('/user/balance'),
 
-  // Tasks
-  getTasks: () => API.get('/tasks'),
+  // Tasks (Intelligent Client-Side Caching with 304 Versioning)
+  getTasksVersion: () => API.get('/tasks/version'),
+  getTasks: async (forceRefresh = false) => {
+    const cachedVersion = localStorage.getItem('vr_tasks_version');
+    const cachedTasksRaw = localStorage.getItem('vr_tasks_cache');
+
+    const params = {};
+    if (!forceRefresh && cachedVersion && cachedTasksRaw) {
+      params.version = cachedVersion;
+    }
+
+    try {
+      const res = await API.get('/tasks', { params });
+
+      // If server confirms tasks haven't changed, reuse mobile cached tasks
+      if (res.notModified && cachedTasksRaw) {
+        const cachedTasks = JSON.parse(cachedTasksRaw);
+        const completionMap = res.completionsToday || {};
+        const freshTasks = cachedTasks.map((t) => {
+          const userDoneCount = completionMap[t.id] || 0;
+          return {
+            ...t,
+            completionsToday: userDoneCount,
+            isAvailable: t.dailyLimit === 0 || userDoneCount < t.dailyLimit,
+          };
+        });
+
+        return {
+          fromCache: true,
+          version: res.version,
+          tasks: freshTasks,
+        };
+      }
+
+      // New task catalog or forced refresh: update device local storage
+      if (res.tasks) {
+        localStorage.setItem('vr_tasks_cache', JSON.stringify(res.tasks));
+        localStorage.setItem('vr_tasks_version', res.version);
+      }
+
+      return {
+        fromCache: false,
+        version: res.version,
+        tasks: res.tasks,
+      };
+    } catch (err) {
+      // Offline fallback: load from phone cache if available
+      if (cachedTasksRaw) {
+        console.warn('⚠️ Offline mode: loading cached tasks from device storage');
+        return {
+          fromCache: true,
+          version: cachedVersion,
+          tasks: JSON.parse(cachedTasksRaw),
+        };
+      }
+      throw err;
+    }
+  },
   getTaskDetails: (id) => API.get(`/tasks/${id}`),
   startTask: (id) => API.post(`/tasks/${id}/start`),
   completeTask: (id, verificationData = {}) => API.post(`/tasks/${id}/complete`, { verificationData }),
@@ -109,6 +165,7 @@ export const apiService = {
   createAdminTask: (data) => API.post('/admin/tasks', data),
   updateAdminTask: (id, data) => API.put(`/admin/tasks/${id}`, data),
   deleteAdminTask: (id) => API.delete(`/admin/tasks/${id}`),
+  clearAdminTasksCache: () => API.post('/admin/tasks/clear-cache'),
   getAdminRecharges: (params = {}) => API.get('/admin/recharges', { params }),
   updateAdminRecharge: (id, data) => API.put(`/admin/recharges/${id}`, data),
   getAdminAnnouncements: () => API.get('/admin/announcements'),

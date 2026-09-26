@@ -1,5 +1,6 @@
 const app = require('./app');
 const { testConnection } = require('./config/db');
+const { connectRedis, closeRedis } = require('./config/redis');
 const { initCronJobs } = require('./jobs/cronJobs');
 require('dotenv').config();
 
@@ -7,6 +8,10 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
+    // 1. Initialize Redis connection
+    await connectRedis();
+
+    // 2. Test MySQL connection
     const isDbConnected = await testConnection();
     if (!isDbConnected) {
       console.warn('⚠️ Warning: Database connection failed. Starting server in degraded mode...');
@@ -25,8 +30,9 @@ const startServer = async () => {
 
     const shutdown = async (signal) => {
       console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
-      server.close(() => {
+      server.close(async () => {
         console.log('💤 HTTP server closed.');
+        await closeRedis();
         process.exit(0);
       });
     };

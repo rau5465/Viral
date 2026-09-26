@@ -1,5 +1,6 @@
 const { Recharge, User, sequelize } = require('../models');
 const { deductCredits } = require('./creditService');
+const { acquireLock, releaseLock, del } = require('../config/redis');
 const AppError = require('../utils/AppError');
 
 const RECHARGE_PLANS = [
@@ -19,7 +20,7 @@ const getRechargePlans = () => {
   };
 };
 
-// Redeem credits for recharge
+// Redeem credits for recharge with concurrency distributed lock
 const redeemRecharge = async (userId, { mobileNumber, operator, planId }) => {
   if (!mobileNumber || !operator || !planId) {
     throw new AppError('Please provide mobile number, operator, and select a recharge plan.', 400);
@@ -36,64 +37,78 @@ const redeemRecharge = async (userId, { mobileNumber, operator, planId }) => {
     throw new AppError('Invalid recharge plan selected.', 400);
   }
 
-  const user = await User.findByPk(userId);
-  if (!user) throw new AppError('User not found.', 404);
-
-  if (user.credit_balance < selectedPlan.credits) {
-    throw new AppError(
-      `Insufficient credits. You need ${selectedPlan.credits} credits for ₹${selectedPlan.amount} recharge, but you only have ${user.credit_balance} credits. Complete more tasks or invite friends!`,
-      400
-    );
+  // Distributed Lock to prevent duplicate concurrent redemption spam
+  const lockKey = `recharge:redeem:${userId}`;
+  const lockToken = await acquireLock(lockKey, 10);
+  if (!lockToken) {
+    throw new AppError('Another recharge request is currently being processed. Please wait a moment.', 429);
   }
 
-  const txId = `VR_RC_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) throw new AppError('User not found.', 404);
 
-  let recharge;
-  await sequelize.transaction(async (t) => {
-    recharge = await Recharge.create(
-      {
-        user_id: user.id,
-        mobile_number: cleanMobile,
-        operator,
-        amount: selectedPlan.amount,
-        credits_spent: selectedPlan.credits,
-        status: 'completed', // Auto-completed simulation for instant user satisfaction
-        transaction_id: txId,
-        processed_at: new Date(),
-        api_response: {
-          operatorRef: `OP_${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-          status: 'SUCCESS',
-          message: 'Mobile recharge processed successfully.',
+    if (user.credit_balance < selectedPlan.credits) {
+      throw new AppError(
+        `Insufficient credits. You need ${selectedPlan.credits} credits for ₹${selectedPlan.amount} recharge, but you only have ${user.credit_balance} credits. Complete more tasks or invite friends!`,
+        400
+      );
+    }
+
+    const txId = `VR_RC_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    let recharge;
+    await sequelize.transaction(async (t) => {
+      recharge = await Recharge.create(
+        {
+          user_id: user.id,
+          mobile_number: cleanMobile,
+          operator,
+          amount: selectedPlan.amount,
+          credits_spent: selectedPlan.credits,
+          status: 'completed', // Auto-completed simulation for instant user satisfaction
+          transaction_id: txId,
+          processed_at: new Date(),
+          api_response: {
+            operatorRef: `OP_${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+            status: 'SUCCESS',
+            message: 'Mobile recharge processed successfully.',
+          },
         },
-      },
-      { transaction: t }
-    );
+        { transaction: t }
+      );
 
-    // Deduct credits from user
-    await deductCredits({
-      userId: user.id,
-      amount: selectedPlan.credits,
-      category: 'recharge',
-      description: `Redeemed for ₹${selectedPlan.amount} ${operator} Mobile Recharge (${cleanMobile})`,
-      referenceId: recharge.id,
-      transaction: t,
+      // Deduct credits from user
+      await deductCredits({
+        userId: user.id,
+        amount: selectedPlan.credits,
+        category: 'recharge',
+        description: `Redeemed for ₹${selectedPlan.amount} ${operator} Mobile Recharge (${cleanMobile})`,
+        referenceId: recharge.id,
+        transaction: t,
+      });
+
+      // Update total_recharged
+      user.total_recharged = parseFloat(user.total_recharged || 0) + selectedPlan.amount;
+      await user.save({ transaction: t });
     });
 
-    // Update total_recharged
-    user.total_recharged = parseFloat(user.total_recharged || 0) + selectedPlan.amount;
-    await user.save({ transaction: t });
-  });
+    // Invalidate admin stats cache
+    del('cache:admin:dashboard:stats').catch(() => {});
 
-  return {
-    rechargeId: recharge.id,
-    transactionId: txId,
-    mobileNumber: cleanMobile,
-    operator,
-    amount: selectedPlan.amount,
-    creditsSpent: selectedPlan.credits,
-    status: recharge.status,
-    createdAt: recharge.created_at,
-  };
+    return {
+      rechargeId: recharge.id,
+      transactionId: txId,
+      mobileNumber: cleanMobile,
+      operator,
+      amount: selectedPlan.amount,
+      creditsSpent: selectedPlan.credits,
+      status: recharge.status,
+      createdAt: recharge.created_at,
+    };
+  } finally {
+    await releaseLock(lockKey, lockToken);
+  }
 };
 
 // Get user recharge history

@@ -1,5 +1,7 @@
 const express = require('express');
 const {
+  getCatalogVersion,
+  getMyCompletionsToday,
   getTasks,
   getTaskDetails,
   startTaskSession,
@@ -12,6 +14,8 @@ const router = express.Router();
 
 router.use(protect); // Protected routes
 
+router.get('/version', getCatalogVersion);
+router.get('/completions/today', getMyCompletionsToday);
 router.get('/', getTasks);
 router.get('/:id', getTaskDetails);
 router.post('/:id/start', taskLimiter, startTaskSession);

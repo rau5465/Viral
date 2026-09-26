@@ -1,6 +1,6 @@
-# 🚀 ViralRecharge — Project Plan
+# 🚀 ViralScope — Project Plan
 
-> **A viral referral-based platform where users earn credits through tasks and redeem them for free mobile recharges.**
+> **A viral referral-based platform where users earn credits through tasks and redeem them for free mobile Scopes.**
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Detail | Value |
 |---|---|
-| **Project Name** | ViralRecharge |
+| **Project Name** | ViralScope |
 | **Tech Stack** | React + Vite (Frontend), Node.js + Express (Backend), MySQL (Database) |
 | **Goal** | Go viral through an aggressive referral system; users earn credits via tasks and redeem for free recharges |
 | **Monetization** | Ad revenue, sponsored tasks, affiliate commissions from visited sites |

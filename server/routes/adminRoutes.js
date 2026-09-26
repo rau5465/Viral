@@ -7,6 +7,7 @@ const {
   createTask,
   updateTask,
   deleteTask,
+  clearTasksCache,
   getAdminRecharges,
   updateRechargeStatus,
   getAnalytics,
@@ -37,6 +38,7 @@ router.get('/tasks', getAllTasks);
 router.post('/tasks', createTask);
 router.put('/tasks/:id', updateTask);
 router.delete('/tasks/:id', deleteTask);
+router.post('/tasks/clear-cache', clearTasksCache);
 
 // Recharges
 router.get('/recharges', getAdminRecharges);

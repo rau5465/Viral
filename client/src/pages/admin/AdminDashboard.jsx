@@ -8,6 +8,7 @@ import {
   Plus,
   Trash2,
   Search,
+  RefreshCw,
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -169,6 +170,17 @@ const AdminDashboard = () => {
       loadData();
     } catch (err) {
       toast.error('Failed to delete task.');
+    }
+  };
+
+  // Clear Tasks Cache across all devices
+  const handleClearTasksCache = async () => {
+    try {
+      const res = await apiService.clearAdminTasksCache();
+      toast.success(res.message || 'Task cache purged! All mobile clients will refresh.');
+      loadData();
+    } catch (err) {
+      toast.error(err.message || 'Failed to clear task cache.');
     }
   };
 
@@ -447,13 +459,23 @@ const AdminDashboard = () => {
         <div className="glass-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '1.2rem' }}>Task Campaigns</h3>
-            <button
-              onClick={() => setTaskModalOpen(true)}
-              className="btn btn-primary"
-              style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-            >
-              <Plus size={16} /> New Campaign
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={handleClearTasksCache}
+                className="btn btn-secondary"
+                title="Bumps task catalog version, forcing all 100k mobile devices to refresh tasks"
+                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+              >
+                <RefreshCw size={14} /> Clear Client Cache
+              </button>
+              <button
+                onClick={() => setTaskModalOpen(true)}
+                className="btn btn-primary"
+                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+              >
+                <Plus size={16} /> New Campaign
+              </button>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

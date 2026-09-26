@@ -1,7 +1,28 @@
 const { User } = require('../models');
 const { verifyToken } = require('../utils/token');
+const { get, set, del } = require('../config/redis');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+
+// Cache TTL for authenticated user session data in seconds (5 minutes)
+const AUTH_CACHE_TTL = 300;
+
+/**
+ * Invalidate cached user session and profile data
+ * Call whenever user details change (e.g. banned, profile update, credits award)
+ */
+const invalidateUserCache = async (userId) => {
+  if (!userId) return;
+  try {
+    await del(
+      `cache:user:auth:${userId}`,
+      `cache:user:profile:${userId}`,
+      `cache:user:dashboard:${userId}`
+    );
+  } catch (err) {
+    console.warn(`[invalidateUserCache error for User #${userId}]`, err.message);
+  }
+};
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -15,10 +36,24 @@ const protect = asyncHandler(async (req, res, next) => {
 
   try {
     const decoded = verifyToken(token);
-    const currentUser = await User.findByPk(decoded.id);
+    const cacheKey = `cache:user:auth:${decoded.id}`;
 
-    if (!currentUser) {
-      return next(new AppError('The user belonging to this token no longer exists.', 401));
+    // Fast-path: Check Redis cache first to bypass MySQL query
+    let userData = await get(cacheKey);
+    let currentUser;
+
+    if (userData) {
+      currentUser = User.build(userData, { isNewRecord: false });
+    } else {
+      // Cache miss: Query MySQL and populate Redis cache
+      currentUser = await User.findByPk(decoded.id);
+
+      if (!currentUser) {
+        return next(new AppError('The user belonging to this token no longer exists.', 401));
+      }
+
+      // Save user data in Redis
+      await set(cacheKey, currentUser.toJSON(), AUTH_CACHE_TTL);
     }
 
     if (currentUser.is_banned) {
@@ -53,7 +88,20 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
 
   try {
     const decoded = verifyToken(token);
-    const currentUser = await User.findByPk(decoded.id);
+    const cacheKey = `cache:user:auth:${decoded.id}`;
+
+    let userData = await get(cacheKey);
+    let currentUser;
+
+    if (userData) {
+      currentUser = User.build(userData, { isNewRecord: false });
+    } else {
+      currentUser = await User.findByPk(decoded.id);
+      if (currentUser) {
+        await set(cacheKey, currentUser.toJSON(), AUTH_CACHE_TTL);
+      }
+    }
+
     if (currentUser && !currentUser.is_banned) {
       req.user = currentUser;
     }
@@ -67,4 +115,5 @@ module.exports = {
   protect,
   restrictTo,
   optionalAuth,
+  invalidateUserCache,
 };

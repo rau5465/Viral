@@ -9,6 +9,10 @@ const {
   sequelize,
 } = require('../models');
 const { awardCredits, deductCredits } = require('../services/creditService');
+const { invalidateUserCache } = require('../middleware/auth');
+const { invalidateTasksCache, bumpTasksVersion } = require('../services/taskService');
+const { invalidateAnnouncementsCache } = require('../services/announcementService');
+const { getOrSet, del } = require('../config/redis');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
 
@@ -27,38 +31,48 @@ const logAdminAction = async (adminId, action, targetType, targetId, details = {
   }
 };
 
-// 4.2 Admin Dashboard Stats
+// 4.2 Admin Dashboard Stats (Cached in Redis for 30s)
 const getDashboardStats = asyncHandler(async (req, res, _next) => {
-  const totalUsers = await User.count({ where: { role: 'user' } });
-  const bannedUsers = await User.count({ where: { is_banned: true } });
-  const totalTasks = await Task.count();
-  const activeTasks = await Task.count({ where: { is_active: true } });
-  const totalCompletions = await TaskCompletion.count({ where: { status: 'completed' } });
+  const stats = await getOrSet(
+    'cache:admin:dashboard:stats',
+    async () => {
+      const totalUsers = await User.count({ where: { role: 'user' } });
+      const bannedUsers = await User.count({ where: { is_banned: true } });
+      const totalTasks = await Task.count();
+      const activeTasks = await Task.count({ where: { is_active: true } });
+      const totalCompletions = await TaskCompletion.count({ where: { status: 'completed' } });
 
-  const totalCreditsDistributed = (await Transaction.sum('amount', {
-    where: { type: 'credit' },
-  })) || 0;
+      const totalCreditsDistributed =
+        (await Transaction.sum('amount', {
+          where: { type: 'credit' },
+        })) || 0;
 
-  const totalRechargeAmount = (await Recharge.sum('amount', {
-    where: { status: 'completed' },
-  })) || 0;
+      const totalRechargeAmount =
+        (await Recharge.sum('amount', {
+          where: { status: 'completed' },
+        })) || 0;
 
-  const pendingRecharges = await Recharge.count({
-    where: { status: 'pending' },
-  });
+      const pendingRecharges = await Recharge.count({
+        where: { status: 'pending' },
+      });
+
+      return {
+        totalUsers,
+        bannedUsers,
+        totalTasks,
+        activeTasks,
+        totalCompletions,
+        totalCreditsDistributed,
+        totalRechargeAmount,
+        pendingRecharges,
+      };
+    },
+    30
+  );
 
   res.status(200).json({
     status: 'success',
-    stats: {
-      totalUsers,
-      bannedUsers,
-      totalTasks,
-      activeTasks,
-      totalCompletions,
-      totalCreditsDistributed,
-      totalRechargeAmount,
-      pendingRecharges,
-    },
+    stats,
   });
 });
 
@@ -144,6 +158,8 @@ const updateUser = asyncHandler(async (req, res, next) => {
   }
 
   await user.save();
+  await invalidateUserCache(user.id);
+  del('cache:admin:dashboard:stats').catch(() => {});
 
   res.status(200).json({
     status: 'success',
@@ -189,6 +205,8 @@ const createTask = asyncHandler(async (req, res, next) => {
   });
 
   await logAdminAction(req.user.id, 'CREATE_TASK', 'task', task.id, { title: task.title });
+  await invalidateTasksCache();
+  del('cache:admin:dashboard:stats').catch(() => {});
 
   res.status(201).json({ status: 'success', task });
 });
@@ -199,6 +217,8 @@ const updateTask = asyncHandler(async (req, res, next) => {
 
   await task.update(req.body);
   await logAdminAction(req.user.id, 'UPDATE_TASK', 'task', task.id, req.body);
+  await invalidateTasksCache();
+  del('cache:admin:dashboard:stats').catch(() => {});
 
   res.status(200).json({ status: 'success', task });
 });
@@ -210,8 +230,21 @@ const deleteTask = asyncHandler(async (req, res, next) => {
   const taskId = task.id;
   await task.destroy();
   await logAdminAction(req.user.id, 'DELETE_TASK', 'task', taskId, { title: task.title });
+  await invalidateTasksCache();
+  del('cache:admin:dashboard:stats').catch(() => {});
 
   res.status(200).json({ status: 'success', message: 'Task deleted successfully.' });
+});
+
+// Force purge task catalog cache and bump version for all mobile clients
+const clearTasksCache = asyncHandler(async (req, res, _next) => {
+  const newVersion = await bumpTasksVersion();
+  await logAdminAction(req.user.id, 'CLEAR_TASKS_CACHE', 'system', 0, { newVersion });
+  res.status(200).json({
+    status: 'success',
+    message: 'Task catalog cache purged and version bumped. All mobile clients will refresh tasks.',
+    version: newVersion,
+  });
 });
 
 // 4.5 Recharge Management
@@ -335,6 +368,7 @@ const createAnnouncement = asyncHandler(async (req, res, next) => {
   await logAdminAction(req.user.id, 'CREATE_ANNOUNCEMENT', 'announcement', announcement.id, {
     title,
   });
+  await invalidateAnnouncementsCache();
   res.status(201).json({ status: 'success', announcement });
 });
 
@@ -350,6 +384,7 @@ const deleteAnnouncement = asyncHandler(async (req, res, next) => {
     announcement.id,
     {}
   );
+  await invalidateAnnouncementsCache();
   res.status(200).json({ status: 'success', message: 'Announcement deleted.' });
 });
 
@@ -372,6 +407,7 @@ module.exports = {
   createTask,
   updateTask,
   deleteTask,
+  clearTasksCache,
   getAdminRecharges,
   updateRechargeStatus,
   getAnalytics,

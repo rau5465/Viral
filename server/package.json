@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "cluster": "pm2 start ecosystem.config.js --env production",
     "db:init": "node scripts/initDb.js",
+    "test:redis": "node scripts/testRedisOptimization.js",
+    "test:youtube": "node scripts/testYouTubeSystem.js",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.js\""
   },
@@ -15,22 +18,26 @@
     "recharge",
     "express",
     "mysql",
-    "sequelize"
+    "sequelize",
+    "redis"
   ],
   "author": "ViralRecharge Team",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "googleapis": "^182.0.0",
     "helmet": "^8.0.0",
+    "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "mysql2": "^3.12.0",
     "node-cron": "^4.6.0",
+    "rate-limit-redis": "^4.3.1",
     "sequelize": "^6.37.5"
   },
   "devDependencies": {

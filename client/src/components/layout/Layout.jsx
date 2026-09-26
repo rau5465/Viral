@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import MobileNav from './MobileNav';
+import InstallAppBanner from '../common/InstallAppBanner';
 
 const Layout = ({ children }) => {
   return (
@@ -12,6 +13,7 @@ const Layout = ({ children }) => {
       </main>
       <Footer />
       <MobileNav />
+      <InstallAppBanner />
     </div>
   );
 };
