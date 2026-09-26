@@ -1,0 +1,23 @@
+{
+  "name": "viral-recharge",
+  "version": "1.0.0",
+  "description": "Viral referral-based platform where users earn credits through tasks and redeem for free mobile recharges",
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "lint": "npm --prefix server run lint && npm --prefix client run lint",
+    "install:all": "npm install --prefix server && npm install --prefix client"
+  },
+  "keywords": [
+    "viral",
+    "referral",
+    "recharge",
+    "react",
+    "express",
+    "mysql",
+    "sequelize"
+  ],
+  "author": "ViralRecharge Team",
+  "license": "ISC"
+}
