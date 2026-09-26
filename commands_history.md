@@ -16,5 +16,7 @@
 | 8 | 2026-09-27 | Optimize complete application for high realtime traffic using Redis. Later suggest VPS requirements for 1 Lakh realtime users at once. |
 | 9 | 2026-09-27 | Make complete application savable as Chrome Web App (PWA) on mobile phones with offline support. Set JWT expiry to 90 days. Implement client-side task data caching (download only once unless cleaned by admin). Prioritize high-priority requests only (Task tracking, Recharge). Suggest revised smaller server requirements. |
 | 10 | 2026-09-27 | push it to git. but first add all setup and use instruction in readme |
+| 11 | 2026-09-27 | push the updates to git |
 
 ---
+
