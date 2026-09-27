@@ -304,6 +304,17 @@ input, select, textarea {
   to { transform: rotate(360deg); }
 }
 
+/* Side Drawer slide-in / slide-out animations */
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); opacity: 0.4; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes drawerSlideOut {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+
 .spinner {
   width: 20px;
   height: 20px;

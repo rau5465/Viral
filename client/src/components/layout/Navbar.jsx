@@ -28,12 +28,22 @@ const Navbar = () => {
 
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [sideDrawerOpen, setSideDrawerOpen] = useState(false);
+  const [drawerClosing, setDrawerClosing] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Animated close: trigger slide-out, then unmount after animation completes
+  const closeDrawer = () => {
+    setDrawerClosing(true);
+    setTimeout(() => {
+      setSideDrawerOpen(false);
+      setDrawerClosing(false);
+    }, 280); // match CSS animation duration
+  };
 
   // Close menus when route changes
   useEffect(() => {
     setMoreMenuOpen(false);
-    setSideDrawerOpen(false);
+    if (sideDrawerOpen) closeDrawer();
   }, [location.pathname]);
 
   // Click outside listener for "More" dropdown
@@ -332,7 +342,7 @@ const Navbar = () => {
             {/* Hamburger — always visible on all screen sizes */}
             <button
               type="button"
-              onClick={() => setSideDrawerOpen(!sideDrawerOpen)}
+              onClick={() => sideDrawerOpen ? closeDrawer() : setSideDrawerOpen(true)}
               style={{
                 background: 'rgba(255, 255, 255, 0.06)',
                 border: '1px solid var(--border-glass)',
@@ -354,48 +364,52 @@ const Navbar = () => {
         </div>
       </header>
 
-      {/* Slide-out Side Drawer Navigation (Available across devices) */}
+      {/* Slide-out Side Drawer Navigation */}
       {sideDrawerOpen && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
             zIndex: 200,
-            background: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(6px)',
+            background: drawerClosing ? 'rgba(0,0,0,0)' : 'rgba(0, 0, 0, 0.72)',
+            backdropFilter: drawerClosing ? 'blur(0px)' : 'blur(5px)',
             display: 'flex',
             justifyContent: 'flex-end',
+            transition: 'background 0.28s ease, backdrop-filter 0.28s ease',
           }}
-          onClick={() => setSideDrawerOpen(false)}
+          onClick={closeDrawer}
         >
           <div
             style={{
-              width: '320px',
+              width: '300px',
               maxWidth: '85vw',
               height: '100%',
-              background: '#040711',
-              borderLeft: '1px solid rgba(0, 238, 253, 0.25)',
-              boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.9)',
-              padding: '24px 20px',
+              background: 'linear-gradient(160deg, #070d1a 0%, #040711 100%)',
+              borderLeft: '1px solid rgba(0, 238, 253, 0.2)',
+              boxShadow: '-12px 0 50px rgba(0, 0, 0, 0.95)',
+              padding: '20px 18px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
               overflowY: 'auto',
+              animation: drawerClosing
+                ? 'drawerSlideOut 0.28s cubic-bezier(0.4, 0, 1, 1) forwards'
+                : 'drawerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div>
-              {/* Drawer Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-                <Link to="/" onClick={() => setSideDrawerOpen(false)}>
-                  <img src="/far-logo-md.png" alt="FAR" style={{ height: '42px' }} />
+              {/* Drawer Header — Logo + Close */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                <Link to="/" onClick={closeDrawer}>
+                  <img src="/far-logo-md.png" alt="FAR" style={{ height: '38px' }} />
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setSideDrawerOpen(false)}
+                  onClick={closeDrawer}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: 'none',
+                    background: 'rgba(255, 255, 255, 0.07)',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '50%',
                     width: '32px',
                     height: '32px',
@@ -404,200 +418,160 @@ const Navbar = () => {
                     justifyContent: 'center',
                     color: '#fff',
                     cursor: 'pointer',
+                    transition: 'background 0.2s',
                   }}
                 >
-                  <X size={18} />
+                  <X size={17} />
                 </button>
               </div>
 
-              {/* User Balance Card in Drawer */}
+              {/* User Identity + Wallet Card */}
               {isAuthenticated && user && (
                 <div
                   style={{
-                    background: 'linear-gradient(135deg, rgba(253, 203, 110, 0.15) 0%, rgba(22, 27, 34, 0.8) 100%)',
-                    border: '1px solid rgba(253, 203, 110, 0.3)',
+                    background: 'linear-gradient(135deg, rgba(253,203,110,0.13) 0%, rgba(10,15,30,0.9) 100%)',
+                    border: '1px solid rgba(253, 203, 110, 0.28)',
                     borderRadius: '14px',
-                    padding: '14px 16px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    padding: '14px 15px',
+                    marginBottom: '18px',
                   }}
                 >
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Wallet Balance</div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fdcb6e' }}>
-                      {user.credit_balance ?? 0} <span style={{ fontSize: '0.8rem' }}>CR</span>
+                  {/* Username row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <div style={{
+                      width: '32px', height: '32px', borderRadius: '50%',
+                      background: 'rgba(0, 238, 253, 0.15)',
+                      border: '1px solid rgba(0,238,253,0.3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <User size={15} color="var(--accent)" />
+                    </div>
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-sub)', lineHeight: 1 }}>Logged in as</div>
+                      <div style={{
+                        fontSize: '0.95rem', fontWeight: 700, color: '#fff',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
+                        {user.full_name || 'User'}
+                      </div>
                     </div>
                   </div>
-                  <Link
-                    to="/recharge"
-                    onClick={() => setSideDrawerOpen(false)}
-                    className="btn btn-accent"
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                  >
-                    Redeem
-                  </Link>
+
+                  {/* Wallet balance + Redeem row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Wallet Balance</div>
+                      <div style={{
+                        fontSize: '1.35rem', fontWeight: 800, color: '#fdcb6e',
+                        whiteSpace: 'nowrap', lineHeight: 1.1,
+                        display: 'flex', alignItems: 'baseline', gap: '4px',
+                      }}>
+                        <span>{user.credit_balance ?? 0}</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.85 }}>CR</span>
+                      </div>
+                    </div>
+                    <Link
+                      to="/recharge"
+                      onClick={closeDrawer}
+                      className="btn btn-accent"
+                      style={{ padding: '6px 13px', fontSize: '0.8rem', flexShrink: 0, whiteSpace: 'nowrap' }}
+                    >
+                      Redeem
+                    </Link>
+                  </div>
                 </div>
               )}
 
-              {/* Drawer Links */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {/* Drawer Nav Links */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {isAuthenticated ? (
                   <>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', margin: '8px 0 4px 6px' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', margin: '6px 0 4px 6px', letterSpacing: '0.06em' }}>
                       Main Menu
                     </div>
-                    <NavLink
-                      to="/dashboard"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <LayoutDashboard size={18} color="var(--accent)" />
+                    <NavLink to="/dashboard" className="nav-link" onClick={closeDrawer}>
+                      <LayoutDashboard size={17} color="var(--accent)" />
                       <span>Dashboard</span>
                     </NavLink>
-                    <NavLink
-                      to="/tasks"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <CheckSquare size={18} color="#00e699" />
+                    <NavLink to="/tasks" className="nav-link" onClick={closeDrawer}>
+                      <CheckSquare size={17} color="#00e699" />
                       <span>Earn Tasks</span>
                     </NavLink>
-                    <NavLink
-                      to="/referrals"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Users size={18} color="#ff7675" />
+                    <NavLink to="/referrals" className="nav-link" onClick={closeDrawer}>
+                      <Users size={17} color="#ff7675" />
                       <span>Invite (5X Bonus)</span>
                     </NavLink>
-                    <NavLink
-                      to="/recharge"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Smartphone size={18} color="#00d2d3" />
+                    <NavLink to="/recharge" className="nav-link" onClick={closeDrawer}>
+                      <Smartphone size={17} color="#00d2d3" />
                       <span>Redeem Recharge</span>
                     </NavLink>
-                    <NavLink
-                      to="/multiply"
-                      className="nav-link"
-                      style={{ color: '#fde502' }}
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Dices size={18} color="#fde502" />
+                    <NavLink to="/multiply" className="nav-link" style={{ color: '#fde502' }} onClick={closeDrawer}>
+                      <Dices size={17} color="#fde502" />
                       <span>Multiplier Game</span>
                     </NavLink>
 
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', margin: '14px 0 4px 6px' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', margin: '12px 0 4px 6px', letterSpacing: '0.06em' }}>
                       Activity &amp; Community
                     </div>
-                    <NavLink
-                      to="/leaderboard"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Trophy size={18} color="#fdcb6e" />
+                    <NavLink to="/leaderboard" className="nav-link" onClick={closeDrawer}>
+                      <Trophy size={17} color="#fdcb6e" />
                       <span>Leaderboard</span>
                     </NavLink>
-                    <NavLink
-                      to="/history"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <History size={18} color="#00e699" />
+                    <NavLink to="/history" className="nav-link" onClick={closeDrawer}>
+                      <History size={17} color="#00e699" />
                       <span>Transaction History</span>
                     </NavLink>
 
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', margin: '14px 0 4px 6px' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', margin: '12px 0 4px 6px', letterSpacing: '0.06em' }}>
                       Explore &amp; Support
                     </div>
-                    <NavLink
-                      to="/partners"
-                      className="nav-link"
-                      style={{ color: 'var(--accent)' }}
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Handshake size={18} />
+                    <NavLink to="/partners" className="nav-link" style={{ color: 'var(--accent)' }} onClick={closeDrawer}>
+                      <Handshake size={17} />
                       <span>For Partners &amp; Creators</span>
                     </NavLink>
-                    <NavLink
-                      to="/about"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Info size={18} />
+                    <NavLink to="/about" className="nav-link" onClick={closeDrawer}>
+                      <Info size={17} />
                       <span>About FAR</span>
                     </NavLink>
-                    <NavLink
-                      to="/contact"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Phone size={18} />
+                    <NavLink to="/contact" className="nav-link" onClick={closeDrawer}>
+                      <Phone size={17} />
                       <span>Contact Us</span>
                     </NavLink>
-                    <NavLink
-                      to="/profile"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <User size={18} />
+                    <NavLink to="/profile" className="nav-link" onClick={closeDrawer}>
+                      <User size={17} />
                       <span>My Profile</span>
                     </NavLink>
                     {isAdmin && (
-                      <NavLink
-                        to="/admin"
-                        className="nav-link"
-                        style={{ color: '#00d2d3' }}
-                        onClick={() => setSideDrawerOpen(false)}
-                      >
-                        <ShieldCheck size={18} />
+                      <NavLink to="/admin" className="nav-link" style={{ color: '#00d2d3' }} onClick={closeDrawer}>
+                        <ShieldCheck size={17} />
                         <span>Control Panel</span>
                       </NavLink>
                     )}
                   </>
                 ) : (
                   <>
-                    <NavLink
-                      to="/partners"
-                      className="nav-link"
-                      style={{ color: 'var(--accent)' }}
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Handshake size={18} />
+                    <NavLink to="/partners" className="nav-link" style={{ color: 'var(--accent)' }} onClick={closeDrawer}>
+                      <Handshake size={17} />
                       <span>For Partners</span>
                     </NavLink>
-                    <NavLink
-                      to="/about"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Info size={18} />
+                    <NavLink to="/about" className="nav-link" onClick={closeDrawer}>
+                      <Info size={17} />
                       <span>About Us</span>
                     </NavLink>
-                    <NavLink
-                      to="/contact"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <Phone size={18} />
+                    <NavLink to="/contact" className="nav-link" onClick={closeDrawer}>
+                      <Phone size={17} />
                       <span>Contact Support</span>
                     </NavLink>
-                    <NavLink
-                      to="/login"
-                      className="nav-link"
-                      onClick={() => setSideDrawerOpen(false)}
-                    >
-                      <User size={18} />
+                    <NavLink to="/login" className="nav-link" onClick={closeDrawer}>
+                      <User size={17} />
                       <span>Log In</span>
                     </NavLink>
                     <NavLink
                       to="/register"
                       className="btn btn-primary"
                       style={{ textAlign: 'center', marginTop: '10px' }}
-                      onClick={() => setSideDrawerOpen(false)}
+                      onClick={closeDrawer}
                     >
                       Join Free
                     </NavLink>
@@ -606,15 +580,12 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Drawer Footer */}
+            {/* Drawer Footer — Logout */}
             {isAuthenticated && (
-              <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '16px', marginTop: '16px' }}>
+              <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.07)', paddingTop: '14px', marginTop: '14px' }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSideDrawerOpen(false);
-                    handleLogout();
-                  }}
+                  onClick={() => { closeDrawer(); handleLogout(); }}
                   className="btn btn-secondary"
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
