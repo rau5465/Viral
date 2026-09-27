@@ -46,8 +46,12 @@ const getReferralStats = async (userId) => {
 };
 
 // Award referral reward when a referee signs up / activates
+// Within 2 hours of registration: 50 credits (5X bonus). After 2 hours: 10 credits (10 Rs).
 const awardReferralReward = async (referrerId, referredUserId) => {
-  const rewardAmount = parseInt(process.env.REFERRAL_BONUS, 10) || 50;
+  const referrer = await User.findByPk(referrerId);
+  const now = new Date();
+  const isWithin2Hours = referrer?.bonus_deadline && now <= new Date(referrer.bonus_deadline);
+  const rewardAmount = isWithin2Hours ? 50 : 10;
 
   const referral = await Referral.findOne({
     where: {
@@ -74,13 +78,15 @@ const awardReferralReward = async (referrerId, referredUserId) => {
       userId: referrerId,
       amount: rewardAmount,
       category: 'referral',
-      description: `Referral reward for inviting ${refereeName}!`,
+      description: isWithin2Hours
+        ? `🔥 5X Referral Bonus (+50 CR) for inviting ${refereeName} within 2 hours!`
+        : `Referral reward (+10 CR) for inviting ${refereeName}!`,
       referenceId: referral.id,
       transaction: t,
     });
   });
 
-  // Check if 4x bonus triggered for the referrer
+  // Check if 5x bonus triggered for the referrer
   const bonusResult = await checkAndApplyBonusMultiplier(referrerId);
 
   // Invalidate cached leaderboard
@@ -88,6 +94,7 @@ const awardReferralReward = async (referrerId, referredUserId) => {
 
   return {
     referralAwarded: rewardAmount,
+    isWithin2Hours,
     bonusResult,
   };
 };

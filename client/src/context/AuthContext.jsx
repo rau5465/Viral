@@ -57,6 +57,17 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  const updateUserBalance = (newBalance) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, credit_balance: Number(newBalance) };
+      try {
+        localStorage.setItem('vr_user', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
   const value = {
     user,
     token,
@@ -66,6 +77,7 @@ export const AuthProvider = ({ children }) => {
     handleAuthSuccess,
     logout,
     refreshUser,
+    updateUserBalance,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -32,11 +32,8 @@ User.init(
     },
     email: {
       type: DataTypes.STRING(100),
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
+      allowNull: true,
+      unique: false,
     },
     password_hash: {
       type: DataTypes.STRING(255),

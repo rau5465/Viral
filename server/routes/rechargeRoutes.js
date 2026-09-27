@@ -4,10 +4,11 @@ const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.use(protect); // Protected routes
-
+// Public route to view plans
 router.get('/plans', getPlans);
-router.post('/redeem', redeemCredits);
-router.get('/history', getHistory);
+
+// Protected user routes
+router.post('/redeem', protect, redeemCredits);
+router.get('/history', protect, getHistory);
 
 module.exports = router;

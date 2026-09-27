@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const path = require('path');
 const { sequelize, getDbPoolStatus } = require('./config/db');
 const { getRedisHealth } = require('./config/redis');
 const { apiLimiter } = require('./middleware/rateLimiters');
@@ -16,6 +17,9 @@ const rechargeRoutes = require('./routes/rechargeRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const youtubeRoutes = require('./routes/youtubeRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const multiplyRoutes = require('./routes/multiplyRoutes');
+const settingRoutes = require('./routes/settingRoutes');
 
 const errorHandler = require('./middleware/errorMiddleware');
 const AppError = require('./utils/AppError');
@@ -24,7 +28,11 @@ require('dotenv').config();
 const app = express();
 
 // Security Middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 app.use(
   cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -98,6 +106,16 @@ app.use('/api/recharges', rechargeRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/youtube', youtubeRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/partners', contactRoutes);
+app.use('/api/multiply', multiplyRoutes);
+app.use('/api/game', multiplyRoutes);
+app.use('/api/games', multiplyRoutes);
+app.use('/api/settings', settingRoutes);
+
+// Static Uploads Folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 404 Handler
 app.all('*', (req, res, next) => {

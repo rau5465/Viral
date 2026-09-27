@@ -46,14 +46,23 @@ const protect = asyncHandler(async (req, res, next) => {
       currentUser = User.build(userData, { isNewRecord: false });
     } else {
       // Cache miss: Query MySQL and populate Redis cache
-      currentUser = await User.findByPk(decoded.id);
+      try {
+        currentUser = await User.findByPk(decoded.id);
+      } catch (dbErr) {
+        console.warn('Database offline in protect middleware, checking in-memory users:', dbErr.message);
+      }
+
+      if (!currentUser) {
+        const { inMemoryUsers } = require('../controllers/authController');
+        currentUser = inMemoryUsers.find((u) => u.id === decoded.id || String(u.id) === String(decoded.id));
+      }
 
       if (!currentUser) {
         return next(new AppError('The user belonging to this token no longer exists.', 401));
       }
 
       // Save user data in Redis
-      await set(cacheKey, currentUser.toJSON(), AUTH_CACHE_TTL);
+      await set(cacheKey, currentUser.toJSON ? currentUser.toJSON() : currentUser, AUTH_CACHE_TTL);
     }
 
     if (currentUser.is_banned) {

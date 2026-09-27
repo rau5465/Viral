@@ -25,7 +25,8 @@ Transaction.init(
         'task',
         'recharge',
         'adjustment',
-        'bonus_multiplier'
+        'bonus_multiplier',
+        'multiply_game'
       ),
       allowNull: false,
     },

@@ -97,9 +97,9 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
               <CheckCircle2 size={24} color="#00b894" />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.1rem', color: '#00b894' }}>4x Viral Bonus Unlocked! 🎉</h3>
+              <h3 style={{ fontSize: '1.1rem', color: '#00b894' }}>5x Viral Bonus Unlocked! 🎉</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                You successfully invited 2+ friends within 2 hours. 100 credits awarded!
+                You earned 50 credits/user 5X bonus for referrals within your first 2 hours!
               </p>
             </div>
           </div>
@@ -127,9 +127,9 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Clock size={20} color="var(--text-muted)" />
           <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>2-Hour 4x Bonus Window Ended</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>2-Hour 5x Bonus Window Ended</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Don&apos;t worry! You still earn 50 credits for every single friend you refer!
+              Don&apos;t worry! You still earn 10 credits (₹10) for every single friend you refer!
             </div>
           </div>
         </div>
@@ -171,11 +171,11 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h3 style={{ fontSize: '1.2rem', color: '#ff7675' }}>4x Viral Bonus Challenge!</h3>
-              <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>Limited Time</span>
+              <h3 style={{ fontSize: '1.2rem', color: '#ff7675' }}>5x Viral Referral Bonus!</h3>
+              <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>2-Hour Window</span>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '2px' }}>
-              Refer <strong>2 friends</strong> before time runs out to multiply your 25 CR signup bonus into <strong>100 Credits</strong>!
+              Earn <strong>50 Credits/User (5X Boost)</strong> within your first 2 hours! After that, standard reward is 10 Credits (₹10)/User.
             </p>
           </div>
         </div>

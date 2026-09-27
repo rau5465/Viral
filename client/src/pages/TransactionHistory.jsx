@@ -34,7 +34,7 @@ const TransactionHistory = () => {
   }, [categoryFilter, typeFilter]);
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '0 20px' }}>
+    <div className="inner-page-offset" style={{ maxWidth: '1000px', margin: '0 auto', padding: '52px 20px 30px 20px' }}>
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '10px' }}>

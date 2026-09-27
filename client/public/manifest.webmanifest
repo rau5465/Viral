@@ -1,20 +1,20 @@
 {
-  "name": "ViralRecharge - Free Mobile Recharge",
-  "short_name": "ViralRecharge",
-  "description": "Earn credits by completing tasks and referring friends. Redeem for free instant mobile recharges.",
+  "name": "FAR - Forget About Recharge",
+  "short_name": "FAR",
+  "description": "Never pay for mobile recharges again! Earn credits by completing quick micro-tasks and 4x viral referrals. Redeem for free instant Jio, Airtel, Vi & BSNL recharges.",
   "start_url": "/",
   "id": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0b0f19",
-  "theme_color": "#6366f1",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "categories": ["utilities", "finance", "entertainment"],
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png",
       "purpose": "any"
     },
     {

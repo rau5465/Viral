@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Sparkles,
   Info,
+  Dices,
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -18,12 +19,24 @@ import BonusTimerWidget from '../components/common/BonusTimerWidget';
 const Dashboard = () => {
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
+  const [creditRateDisplay, setCreditRateDisplay] = useState('1Rs = 1 Credit');
   const [loading, setLoading] = useState(true);
 
   const fetchDashboard = async () => {
     try {
-      const res = await apiService.getDashboard();
-      setDashboardData(res.dashboard);
+      const [dashRes, rateRes] = await Promise.allSettled([
+        apiService.getDashboard(),
+        apiService.getCreditRate(),
+      ]);
+      if (dashRes.status === 'fulfilled') {
+        setDashboardData(dashRes.value.dashboard);
+      }
+      if (
+        rateRes.status === 'fulfilled' &&
+        rateRes.value.data?.credit_rate?.credit_rate_display
+      ) {
+        setCreditRateDisplay(rateRes.value.data.credit_rate.credit_rate_display);
+      }
     } catch (err) {
       console.error('Failed to load dashboard:', err);
     } finally {
@@ -37,7 +50,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: '1100px', margin: '40px auto', padding: '0 20px', textAlign: 'center' }}>
+      <div className="inner-page-offset" style={{ maxWidth: '1100px', margin: '0 auto', padding: '52px 20px', textAlign: 'center' }}>
         <div className="spinner" style={{ margin: '40px auto' }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading your dashboard...</p>
       </div>
@@ -51,10 +64,11 @@ const Dashboard = () => {
 
   return (
     <div
+      className="inner-page-offset"
       style={{
         maxWidth: '1100px',
-        margin: '24px auto',
-        padding: '0 20px',
+        margin: '0 auto',
+        padding: '52px 20px 24px 20px',
         display: 'flex',
         flexDirection: 'column',
         gap: '24px',
@@ -89,6 +103,85 @@ const Dashboard = () => {
         referralLink={`${window.location.origin}/register?ref=${user?.referral_code || ''}`}
       />
 
+      {/* Multiply Credits Game Promotion Strip */}
+      <div
+        className="glass-card"
+        style={{
+          padding: '20px 24px',
+          background: 'linear-gradient(135deg, rgba(253, 167, 2, 0.18) 0%, rgba(13, 27, 62, 0.95) 100%)',
+          border: '1.5px solid rgba(253, 167, 2, 0.6)',
+          borderRadius: '18px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          boxShadow: '0 8px 30px rgba(253, 167, 2, 0.25)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              background: 'var(--lightning-gradient)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 16px rgba(253, 167, 2, 0.6)',
+              flexShrink: 0,
+            }}
+          >
+            <Dices size={26} color="#000" />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0 }}>
+                Multiply Your Credits 100X by playing multiplier game
+              </h3>
+              <span
+                style={{
+                  background: 'rgba(253, 167, 2, 0.25)',
+                  border: '1px solid #fda702',
+                  borderRadius: '12px',
+                  padding: '2px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  color: '#fde502',
+                }}
+              >
+                100X POTENTIAL
+              </span>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+              Roll 1–10,000 HI-LO dice. Multiply your earned balance up to 100X in seconds!
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/multiply"
+          style={{
+            background: 'var(--lightning-gradient)',
+            color: '#000',
+            fontWeight: 800,
+            fontSize: '0.92rem',
+            padding: '10px 20px',
+            borderRadius: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 6px 20px rgba(253, 167, 2, 0.45)',
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span>🎲 Play Multiplier Game</span>
+          <ArrowUpRight size={16} />
+        </Link>
+      </div>
+
       {/* Wallet Balance & Key Metrics Grid */}
       <div
         style={{
@@ -117,6 +210,21 @@ const Dashboard = () => {
             <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#fff', marginTop: '6px' }}>
               {user?.credit_balance ?? 0}{' '}
               <span style={{ fontSize: '1rem', color: '#fdcb6e', fontWeight: 700 }}>CR</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#00e699',
+                  background: 'rgba(0, 230, 153, 0.12)',
+                  border: '1px solid rgba(0, 230, 153, 0.25)',
+                  borderRadius: '6px',
+                  padding: '2px 8px',
+                }}
+              >
+                Rate: {creditRateDisplay}
+              </span>
             </div>
           </div>
           <div style={{ marginTop: '16px' }}>

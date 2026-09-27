@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Zap, Lock, Mail, ShieldAlert } from 'lucide-react';
+import { Zap, Lock, ShieldAlert, ArrowRight } from 'lucide-react';
+import { WhatsAppIcon } from '../components/common/WhatsAppIcon';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -10,19 +11,28 @@ const Login = () => {
   const { handleAuthSuccess } = useAuth();
   const toast = useToast();
 
-  const [identifier, setIdentifier] = useState('');
+  const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handleMobileChange = (e) => {
+    // Keep only numeric digits, max 10
+    const digitsOnly = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+    setMobile(digitsOnly);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!identifier || !password) {
-      return toast.warning('Please enter both email/mobile and password.');
+    if (!mobile || mobile.length !== 10) {
+      return toast.warning('Please enter your 10-digit WhatsApp mobile number.');
+    }
+    if (!password) {
+      return toast.warning('Please enter your password.');
     }
 
     setLoading(true);
     try {
-      const res = await apiService.login({ identifier, password });
+      const res = await apiService.login({ mobile, identifier: mobile, password });
       handleAuthSuccess(res.user, res.token, res.refreshToken);
       toast.success(`Welcome back, ${res.user.full_name}! 👋`);
 
@@ -32,14 +42,14 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      toast.error(err.message || 'Login failed. Please check credentials.');
+      toast.error(err.message || 'Login failed. Please check your WhatsApp number & password.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickFill = (email, pass) => {
-    setIdentifier(email);
+  const handleQuickFill = (demoPhone, pass) => {
+    setMobile(demoPhone);
     setPassword(pass);
   };
 
@@ -47,47 +57,63 @@ const Login = () => {
     <div style={{ maxWidth: '440px', margin: '60px auto', padding: '0 20px' }}>
       <div className="glass-card" style={{ padding: '32px' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div
+          <img
+            src="/far-logo-sm.png"
+            alt="FAR - Forget About Recharge"
             style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'var(--primary-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              height: '46px',
+              width: 'auto',
               margin: '0 auto 12px auto',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 0 12px rgba(0, 210, 255, 0.35))',
             }}
-          >
-            <Zap size={26} color="#fff" />
-          </div>
+          />
           <h2 style={{ fontSize: '1.6rem', marginBottom: '6px' }}>Welcome Back</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Log in to manage your credits & free recharges
+            Sign in with your WhatsApp mobile number • No OTP required
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* WhatsApp Mobile Number */}
           <div className="form-group">
-            <label className="form-label">Email or Mobile Number</label>
-            <div style={{ position: 'relative' }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <WhatsAppIcon size={16} />
+              <span>WhatsApp Mobile Number</span>
+            </label>
+            <div style={{ position: 'relative', display: 'flex' }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: 'var(--text-sub)',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  borderRight: '1px solid var(--border-glass)',
+                  paddingRight: '8px',
+                  zIndex: 2,
+                }}
+              >
+                <WhatsAppIcon size={16} /> +91
+              </span>
               <input
-                type="text"
+                type="tel"
                 required
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="name@example.com or 9876543210"
+                maxLength={10}
+                value={mobile}
+                onChange={handleMobileChange}
+                placeholder="9876543210"
                 className="form-input"
-                style={{ paddingLeft: '40px' }}
-              />
-              <Mail
-                size={18}
-                color="var(--text-sub)"
-                style={{ position: 'absolute', left: '12px', top: '14px' }}
+                style={{ paddingLeft: '80px', width: '100%', letterSpacing: '1px', fontWeight: 600 }}
               />
             </div>
           </div>
 
+          {/* Password */}
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <label className="form-label">Password</label>
@@ -120,13 +146,31 @@ const Login = () => {
             type="submit"
             disabled={loading}
             className="btn btn-primary"
-            style={{ width: '100%', padding: '14px', marginTop: '10px', fontSize: '1rem' }}
+            style={{
+              width: '100%',
+              padding: '14px',
+              marginTop: '10px',
+              fontSize: '1rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
           >
-            {loading ? 'Logging in...' : 'Sign In'}
+            {loading ? (
+              <div className="spinner" style={{ width: '20px', height: '20px', margin: 0 }} />
+            ) : (
+              <>
+                <Zap size={18} />
+                <span>Sign In with WhatsApp</span>
+                <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
 
-        {/* Demo Accounts Quick-Fill Box for pair programming/testing */}
+        {/* Demo Accounts Quick-Fill Box for testing */}
         <div
           style={{
             marginTop: '24px',
@@ -153,19 +197,19 @@ const Login = () => {
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               type="button"
-              onClick={() => handleQuickFill('admin@viralrecharge.com', 'Admin@123')}
+              onClick={() => handleQuickFill('9999999999', 'Admin@123')}
               className="btn btn-secondary"
               style={{ flex: 1, padding: '6px', fontSize: '0.75rem' }}
             >
-              Demo Admin
+              Demo Admin (9999999999)
             </button>
             <button
               type="button"
-              onClick={() => handleQuickFill('rahul@example.com', 'Password@123')}
+              onClick={() => handleQuickFill('9876543210', 'Password@123')}
               className="btn btn-secondary"
               style={{ flex: 1, padding: '6px', fontSize: '0.75rem' }}
             >
-              Demo User
+              Demo User (9876543210)
             </button>
           </div>
         </div>
@@ -173,7 +217,7 @@ const Login = () => {
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
           Don&apos;t have an account yet?{' '}
           <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 600 }}>
-            Join Free & Claim 25 CR
+            Join Free &amp; Claim 25 CR
           </Link>
         </div>
       </div>

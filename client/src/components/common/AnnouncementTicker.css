@@ -1,0 +1,75 @@
+/* AnnouncementTicker — scrolling notice bar below the header */
+
+.announcement-ticker {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.35);
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  min-height: 32px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.ticker-label {
+  flex-shrink: 0;
+  padding: 0 10px 0 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  border-right: 1px solid rgba(99, 102, 241, 0.35);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.ticker-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.ticker-content {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker-scroll 30s linear infinite;
+  padding-left: 100%;
+  color: #e2e8f0;
+}
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.announcement-ticker:hover .ticker-content {
+  animation-play-state: paused;
+}
+
+.ticker-close {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0 10px;
+  height: 100%;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.ticker-close:hover {
+  color: #f87171;
+}

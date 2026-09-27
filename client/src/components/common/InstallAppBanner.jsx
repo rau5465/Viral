@@ -72,15 +72,15 @@ const InstallAppBanner = () => {
         left: '12px',
         right: '12px',
         zIndex: 999,
-        background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(15, 23, 42, 0.95))',
+        background: 'linear-gradient(135deg, rgba(7, 11, 20, 0.96), rgba(1, 24, 70, 0.96))',
         backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(99, 102, 241, 0.4)',
+        border: '1px solid rgba(0, 210, 255, 0.4)',
         borderRadius: '16px',
         padding: '14px 16px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.3)',
+        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.7), 0 0 24px rgba(0, 210, 255, 0.25)',
         animation: 'slideUp 0.3s ease-out',
         maxWidth: '500px',
         margin: '0 auto',
@@ -92,12 +92,12 @@ const InstallAppBanner = () => {
             width: '42px',
             height: '42px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: 'linear-gradient(135deg, #00eefd, #0066ff)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.5)',
+            boxShadow: '0 4px 14px rgba(0, 102, 255, 0.5)',
           }}
         >
           <Smartphone size={22} color="#ffffff" />
@@ -113,8 +113,8 @@ const InstallAppBanner = () => {
               gap: '6px',
             }}
           >
-            <span>Save App to Phone</span>
-            <Sparkles size={14} color="#fbbf24" />
+            <span>Install FAR Web App</span>
+            <Sparkles size={14} color="#fda702" />
           </div>
           <div
             style={{
@@ -125,7 +125,7 @@ const InstallAppBanner = () => {
               textOverflow: 'ellipsis',
             }}
           >
-            Fast 1-tap launch • Works online & offline
+            Instant 1-tap recharges • Works lightning fast
           </div>
         </div>
       </div>
@@ -134,21 +134,21 @@ const InstallAppBanner = () => {
         <button
           onClick={handleInstallClick}
           style={{
-            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-            color: '#ffffff',
+            background: 'linear-gradient(135deg, #00eefd, #0066ff)',
+            color: '#070b14',
             border: 'none',
             borderRadius: '10px',
             padding: '8px 14px',
             fontSize: '0.8rem',
-            fontWeight: 700,
+            fontWeight: 800,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+            boxShadow: '0 4px 14px rgba(0, 210, 255, 0.4)',
           }}
         >
-          <Download size={14} />
+          <Download size={14} color="#070b14" />
           <span>Install</span>
         </button>
 

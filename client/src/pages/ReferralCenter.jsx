@@ -74,7 +74,7 @@ const ReferralCenter = () => {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: '1100px', margin: '40px auto', padding: '0 20px', textAlign: 'center' }}>
+      <div className="inner-page-offset" style={{ maxWidth: '1100px', margin: '0 auto', padding: '52px 20px', textAlign: 'center' }}>
         <div className="spinner" style={{ margin: '40px auto' }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading Referral Center...</p>
       </div>
@@ -83,10 +83,11 @@ const ReferralCenter = () => {
 
   return (
     <div
+      className="inner-page-offset"
       style={{
         maxWidth: '1100px',
-        margin: '30px auto',
-        padding: '0 20px',
+        margin: '0 auto',
+        padding: '52px 20px 30px 20px',
         display: 'flex',
         flexDirection: 'column',
         gap: '24px',
@@ -95,10 +96,10 @@ const ReferralCenter = () => {
       {/* Header */}
       <div>
         <h1 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Flame size={28} color="#ff7675" /> Referral Center & 4X Bonus
+          <Users size={28} color="var(--accent)" /> Invite &amp; Referral Program (5X Bonus)
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          Earn 50 Credits for every friend who joins + unlock the 4x Bonus Multiplier!
+          Earn 50 Credits/User during your first 2 hours (5X Boost)! Standard reward: 10 Credits (₹10)/User.
         </p>
       </div>
 
@@ -113,7 +114,7 @@ const ReferralCenter = () => {
       <div className="glass-card" style={{ padding: '28px' }}>
         <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Your Exclusive Referral Link</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '18px' }}>
-          Share your personal link. When someone registers through it, you earn 50 Credits immediately!
+          Share your personal link. Earn 50 Credits for each friend who registers in your first 2 hours (10 Credits thereafter)!
         </p>
 
         {/* Link Bar */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Zap, Flame, Lock, Mail, Phone, User, Gift, CheckCircle2 } from 'lucide-react';
+import { Zap, Flame, Lock, User, Gift, ArrowRight } from 'lucide-react';
+import { WhatsAppIcon } from '../components/common/WhatsAppIcon';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -14,15 +15,11 @@ const Register = () => {
   const [formData, setFormData] = useState({
     full_name: '',
     mobile: '',
-    email: '',
     password: '',
     confirmPassword: '',
     referral_code: '',
   });
 
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [otpVerified, setOtpVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -33,73 +30,49 @@ const Register = () => {
   }, [searchParams]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSendOtp = async () => {
-    if (!formData.mobile || formData.mobile.length !== 10) {
-      return toast.warning('Please enter a valid 10-digit mobile number first.');
-    }
-    setLoading(true);
-    try {
-      const res = await apiService.sendOtp({ mobile: formData.mobile, purpose: 'registration' });
-      setOtpSent(true);
-      toast.success(res.message);
-      if (res.demoOtp) {
-        setOtpCode(res.demoOtp); // Auto-fill in dev mode for supreme convenience
-      }
-    } catch (err) {
-      toast.error(err.message || 'Failed to send OTP.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!otpCode || otpCode.length !== 6) {
-      return toast.warning('Please enter the 6-digit OTP.');
-    }
-    setLoading(true);
-    try {
-      await apiService.verifyOtp({
-        mobile: formData.mobile,
-        code: otpCode,
-        purpose: 'registration',
-      });
-      setOtpVerified(true);
-      toast.success('Mobile number verified! 🎉');
-    } catch (err) {
-      toast.error(err.message || 'Invalid OTP code.');
-    } finally {
-      setLoading(false);
+    const { name, value } = e.target;
+    if (name === 'mobile') {
+      // Keep only numeric digits, max 10
+      const digitsOnly = value.replace(/[^0-9]/g, '').slice(0, 10);
+      setFormData((prev) => ({ ...prev, mobile: digitsOnly }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      return toast.error('Passwords do not match.');
+    if (!formData.full_name.trim()) {
+      return toast.warning('Please enter your full name.');
     }
+
+    if (!formData.mobile || formData.mobile.length !== 10) {
+      return toast.warning('Please enter a valid 10-digit WhatsApp mobile number.');
+    }
+
     if (formData.password.length < 6) {
       return toast.error('Password must be at least 6 characters.');
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      return toast.error('Passwords do not match.');
     }
 
     setLoading(true);
     try {
       const res = await apiService.register({
-        full_name: formData.full_name,
-        mobile: formData.mobile,
-        email: formData.email,
+        full_name: formData.full_name.trim(),
+        mobile: formData.mobile.trim(),
         password: formData.password,
-        referral_code: formData.referral_code,
+        referral_code: formData.referral_code.trim(),
       });
 
       handleAuthSuccess(res.user, res.token, res.refreshToken);
-      toast.success('Welcome to ViralRecharge! 25 bonus credits added.');
+      toast.success('Welcome to FAR! 25 welcome bonus credits added.');
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.message || 'Registration failed. Please check inputs.');
+      toast.error(err.message || 'Registration failed. Please check your WhatsApp mobile number.');
     } finally {
       setLoading(false);
     }
@@ -109,51 +82,48 @@ const Register = () => {
     <div
       style={{
         maxWidth: '480px',
-        margin: '40px auto',
+        margin: '56px auto',
         padding: '0 20px',
       }}
     >
       <div className="glass-card" style={{ padding: '32px' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div
+          <img
+            src="/far-logo-sm.png"
+            alt="FAR - Forget About Recharge"
             style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'var(--primary-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              height: '46px',
+              width: 'auto',
               margin: '0 auto 12px auto',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 0 12px rgba(0, 210, 255, 0.35))',
             }}
-          >
-            <Zap size={26} color="#fff" />
-          </div>
-          <h2 style={{ fontSize: '1.6rem', marginBottom: '6px' }}>Create Your Account</h2>
+          />
+          <h2 style={{ fontSize: '1.6rem', marginBottom: '6px' }}>Create Your FAR Account</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Get 25 credits instantly + unlock the 4x 2-hour bonus!
+            Instant sign up via WhatsApp mobile number • No OTP required
           </p>
         </div>
 
         {/* 4x Bonus Alert Box */}
         <div
           style={{
-            background: 'rgba(255, 118, 117, 0.12)',
-            border: '1px solid rgba(255, 118, 117, 0.3)',
-            borderRadius: '10px',
-            padding: '10px 14px',
+            background: 'rgba(253, 167, 2, 0.12)',
+            border: '1px solid rgba(253, 167, 2, 0.35)',
+            borderRadius: '12px',
+            padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            marginBottom: '20px',
+            gap: '10px',
+            marginBottom: '22px',
             fontSize: '0.85rem',
-            color: '#ff7675',
+            color: '#fda702',
           }}
         >
-          <Flame size={18} flexShrink={0} />
+          <Flame size={20} flexShrink={0} />
           <span>
-            <strong>4X Challenge:</strong> Refer 2 friends within 2 hours after signup to boost your bonus to 100 Credits!
+            <strong>Instant 25 Credits Welcome Bonus:</strong> Complete signup to get 25 credits. Refer 2 friends in 2 hours to 4X boost to 100 credits!
           </span>
         </div>
 
@@ -180,117 +150,61 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Email */}
+          {/* WhatsApp Mobile Number */}
           <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <div style={{ position: 'relative' }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <WhatsAppIcon size={16} />
+              <span>WhatsApp Mobile Number</span>
+              <span style={{ fontSize: '0.75rem', color: '#25D366', fontWeight: 600 }}>(No OTP Needed)</span>
+            </label>
+            <div style={{ position: 'relative', display: 'flex' }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: 'var(--text-sub)',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  borderRight: '1px solid var(--border-glass)',
+                  paddingRight: '8px',
+                  zIndex: 2,
+                }}
+              >
+                <WhatsAppIcon size={16} /> +91
+              </span>
               <input
-                type="email"
-                name="email"
+                type="tel"
+                name="mobile"
                 required
-                value={formData.email}
+                maxLength={10}
+                value={formData.mobile}
                 onChange={handleChange}
-                placeholder="name@example.com"
+                placeholder="9876543210"
                 className="form-input"
-                style={{ paddingLeft: '40px' }}
-              />
-              <Mail
-                size={18}
-                color="var(--text-sub)"
-                style={{ position: 'absolute', left: '12px', top: '14px' }}
+                style={{ paddingLeft: '80px', width: '100%', letterSpacing: '1px', fontWeight: 600 }}
               />
             </div>
-          </div>
-
-          {/* Mobile + OTP Verification */}
-          <div className="form-group">
-            <label className="form-label">Mobile Number (10 Digits)</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <input
-                  type="tel"
-                  name="mobile"
-                  required
-                  maxLength={10}
-                  value={formData.mobile}
-                  onChange={handleChange}
-                  placeholder="9876543210"
-                  className="form-input"
-                  style={{ paddingLeft: '40px' }}
-                  disabled={otpVerified}
-                />
-                <Phone
-                  size={18}
-                  color="var(--text-sub)"
-                  style={{ position: 'absolute', left: '12px', top: '14px' }}
-                />
-              </div>
-              {!otpVerified ? (
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={loading || formData.mobile.length !== 10}
-                  className="btn btn-secondary"
-                  style={{ padding: '0 14px', fontSize: '0.85rem' }}
-                >
-                  {otpSent ? 'Resend' : 'Send OTP'}
-                </button>
-              ) : (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    color: '#00b894',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    padding: '0 10px',
-                  }}
-                >
-                  <CheckCircle2 size={16} /> Verified
-                </div>
-              )}
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Used to fulfill mobile recharges (Jio, Airtel, Vi, BSNL) and account recovery.
             </div>
           </div>
-
-          {/* OTP Input Field */}
-          {otpSent && !otpVerified && (
-            <div className="form-group" style={{ animation: 'slideDown 0.2s ease' }}>
-              <label className="form-label">Enter 6-Digit OTP</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="123456"
-                  className="form-input"
-                  style={{ letterSpacing: '4px', textAlign: 'center', fontSize: '1.1rem' }}
-                />
-                <button
-                  type="button"
-                  onClick={handleVerifyOtp}
-                  disabled={loading}
-                  className="btn btn-accent"
-                  style={{ padding: '0 16px' }}
-                >
-                  Verify
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Password */}
           <div className="form-group">
-            <label className="form-label">Password</label>
+            <label className="form-label">Create Password</label>
             <div style={{ position: 'relative' }}>
               <input
                 type="password"
                 name="password"
                 required
+                minLength={6}
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="At least 6 characters"
+                placeholder="Minimum 6 characters"
                 className="form-input"
                 style={{ paddingLeft: '40px' }}
               />
@@ -312,7 +226,7 @@ const Register = () => {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm password"
+                placeholder="Re-enter password"
                 className="form-input"
                 style={{ paddingLeft: '40px' }}
               />
@@ -324,10 +238,15 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Referral Code */}
+          {/* Referral Code (Optional) */}
           <div className="form-group">
-            <label className="form-label">
-              Referral Code <span style={{ color: 'var(--text-sub)' }}>(Optional)</span>
+            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Referral Code (Optional)</span>
+              {formData.referral_code && (
+                <span style={{ color: 'var(--accent)', fontSize: '0.8rem', fontWeight: 600 }}>
+                  ✓ Code Applied
+                </span>
+              )}
             </label>
             <div style={{ position: 'relative' }}>
               <input
@@ -341,27 +260,67 @@ const Register = () => {
               />
               <Gift
                 size={18}
-                color="#fdcb6e"
+                color="var(--text-sub)"
                 style={{ position: 'absolute', left: '12px', top: '14px' }}
               />
             </div>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
             className="btn btn-primary"
-            style={{ width: '100%', padding: '14px', marginTop: '10px', fontSize: '1rem' }}
+            style={{
+              width: '100%',
+              padding: '14px',
+              fontSize: '1rem',
+              fontWeight: 700,
+              marginTop: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
           >
-            {loading ? 'Creating Account...' : 'Complete Registration & Claim 25 CR'}
+            {loading ? (
+              <div className="spinner" style={{ width: '20px', height: '20px', margin: 0 }} />
+            ) : (
+              <>
+                <Zap size={18} />
+                <span>Create Account &amp; Claim 25 Credits</span>
+                <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.9rem', color: 'var(--text-sub)' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 600 }}>
-            Log In
+          <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
+            Sign In with WhatsApp
           </Link>
+        </div>
+
+        <div
+          style={{
+            marginTop: '20px',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--border-glass)',
+            textAlign: 'center',
+            fontSize: '0.78rem',
+            color: 'var(--text-muted)',
+          }}
+        >
+          By signing up, you agree to our{' '}
+          <Link to="/terms" style={{ color: 'var(--text-sub)', textDecoration: 'underline' }}>
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link to="/privacy" style={{ color: 'var(--text-sub)', textDecoration: 'underline' }}>
+            Privacy Policy
+          </Link>
+          .
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Zap, Mail, Lock, KeyRound } from 'lucide-react';
+import { Zap, Lock, KeyRound } from 'lucide-react';
+import { WhatsAppIcon } from '../components/common/WhatsAppIcon';
 import { apiService } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
@@ -16,7 +17,9 @@ const ForgotPassword = () => {
 
   const handleRequestOtp = async (e) => {
     e.preventDefault();
-    if (!identifier) return toast.warning('Please enter your email or mobile.');
+    if (!identifier || identifier.length !== 10) {
+      return toast.warning('Please enter your 10-digit WhatsApp mobile number.');
+    }
 
     setLoading(true);
     try {
@@ -72,7 +75,7 @@ const ForgotPassword = () => {
           <h2 style={{ fontSize: '1.6rem', marginBottom: '6px' }}>Reset Password</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
             {step === 1
-              ? 'Enter your registered email or mobile number to receive a reset code'
+              ? 'Enter your registered WhatsApp mobile number to receive a reset code'
               : 'Enter the 6-digit code and your new password'}
           </p>
         </div>
@@ -80,21 +83,38 @@ const ForgotPassword = () => {
         {step === 1 ? (
           <form onSubmit={handleRequestOtp}>
             <div className="form-group">
-              <label className="form-label">Email or Mobile Number</label>
-              <div style={{ position: 'relative' }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <WhatsAppIcon size={16} />
+                <span>WhatsApp Mobile Number</span>
+              </label>
+              <div style={{ position: 'relative', display: 'flex' }}>
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    color: 'var(--text-sub)',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    borderRight: '1px solid var(--border-glass)',
+                    paddingRight: '8px',
+                    zIndex: 2,
+                  }}
+                >
+                  <WhatsAppIcon size={16} /> +91
+                </span>
                 <input
-                  type="text"
+                  type="tel"
                   required
+                  maxLength={10}
                   value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="name@example.com or 9876543210"
+                  onChange={(e) => setIdentifier(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                  placeholder="9876543210"
                   className="form-input"
-                  style={{ paddingLeft: '40px' }}
-                />
-                <Mail
-                  size={18}
-                  color="var(--text-sub)"
-                  style={{ position: 'absolute', left: '12px', top: '14px' }}
+                  style={{ paddingLeft: '80px', width: '100%', letterSpacing: '1px', fontWeight: 600 }}
                 />
               </div>
             </div>

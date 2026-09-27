@@ -24,7 +24,7 @@ const Leaderboard = () => {
   const remainingLeaders = leaders.slice(3);
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '0 20px' }}>
+    <div className="inner-page-offset" style={{ maxWidth: '1000px', margin: '0 auto', padding: '52px 20px 30px 20px' }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <h1 style={{ fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>

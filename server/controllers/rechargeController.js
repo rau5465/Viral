@@ -7,7 +7,8 @@ const asyncHandler = require('../utils/asyncHandler');
 
 // Available recharge plans
 const getPlans = asyncHandler(async (req, res, _next) => {
-  const data = getRechargePlans();
+  const { operator } = req.query;
+  const data = getRechargePlans(operator);
   res.status(200).json({
     status: 'success',
     ...data,

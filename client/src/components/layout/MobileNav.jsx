@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, Flame, Smartphone, History } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Users, Smartphone, Dices } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const MobileNav = () => {
@@ -11,9 +11,9 @@ const MobileNav = () => {
   const navItems = [
     { to: '/dashboard', label: 'Home', icon: <LayoutDashboard size={20} /> },
     { to: '/tasks', label: 'Earn', icon: <CheckSquare size={20} /> },
-    { to: '/referrals', label: '4x Refer', icon: <Flame size={20} color="#ff7675" /> },
+    { to: '/multiply', label: 'Multiplier', icon: <Dices size={20} color="#fde502" /> },
+    { to: '/referrals', label: 'Invite', icon: <Users size={20} color="var(--accent)" /> },
     { to: '/recharge', label: 'Redeem', icon: <Smartphone size={20} /> },
-    { to: '/history', label: 'History', icon: <History size={20} /> },
   ];
 
   return (
@@ -25,7 +25,7 @@ const MobileNav = () => {
         left: 0,
         right: 0,
         zIndex: 90,
-        background: 'rgba(13, 17, 23, 0.95)',
+        background: '#000000',
         backdropFilter: 'blur(16px)',
         borderTop: '1px solid var(--border-glass)',
         alignItems: 'center',

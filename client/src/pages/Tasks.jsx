@@ -76,7 +76,7 @@ const Tasks = () => {
       : tasks.filter((t) => t.type === selectedCategory);
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '30px auto', padding: '0 20px' }}>
+    <div className="inner-page-offset" style={{ maxWidth: '1100px', margin: '0 auto', padding: '52px 20px 30px 20px' }}>
       {/* Header */}
       <div
         style={{

@@ -15,6 +15,14 @@ import TransactionHistory from '../pages/TransactionHistory';
 import Leaderboard from '../pages/Leaderboard';
 import Profile from '../pages/Profile';
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
+import TermsOfService from '../pages/TermsOfService';
+import RefundPolicy from '../pages/RefundPolicy';
+import About from '../pages/About';
+import ContactUs from '../pages/ContactUs';
+import RechargePolicy from '../pages/RechargePolicy';
+import Partners from '../pages/Partners';
+import MultiplyGame from '../pages/MultiplyGame';
 
 // Route Guards
 const ProtectedRoute = ({ children }) => {
@@ -55,6 +63,21 @@ const AppRoutes = () => {
       {/* Public Pages */}
       <Route path="/" element={<Landing />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
+      <Route path="/partners" element={<Partners />} />
+      <Route path="/partner" element={<Partners />} />
+      <Route path="/advertise" element={<Partners />} />
+      <Route path="/creators" element={<Partners />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/about-us" element={<About />} />
+      <Route path="/contact" element={<ContactUs />} />
+      <Route path="/contact-us" element={<ContactUs />} />
+      <Route path="/recharge-policy" element={<RechargePolicy />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/refund" element={<RefundPolicy />} />
+      <Route path="/refund-policy" element={<RefundPolicy />} />
 
       {/* Guest Only Pages */}
       <Route
@@ -128,6 +151,30 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/multiply"
+        element={
+          <ProtectedRoute>
+            <MultiplyGame />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/game"
+        element={
+          <ProtectedRoute>
+            <MultiplyGame />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/multiply-credits"
+        element={
+          <ProtectedRoute>
+            <MultiplyGame />
           </ProtectedRoute>
         }
       />

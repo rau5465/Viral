@@ -12,6 +12,8 @@ const AdminLog = require('./AdminLog');
 const PartnerChannel = require('./PartnerChannel');
 const UserYouTubeAccount = require('./UserYouTubeAccount');
 const UserYouTubeSubscription = require('./UserYouTubeSubscription');
+const ContactMessage = require('./ContactMessage');
+const GameRoll = require('./GameRoll');
 
 // 1. User <-> Referral
 User.hasMany(Referral, { foreignKey: 'referrer_id', as: 'referredUsers' });
@@ -73,6 +75,10 @@ UserYouTubeSubscription.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 PartnerChannel.hasMany(UserYouTubeSubscription, { foreignKey: 'partner_channel_id', as: 'userSubscriptions' });
 UserYouTubeSubscription.belongsTo(PartnerChannel, { foreignKey: 'partner_channel_id', as: 'partnerChannel' });
 
+// 12. User <-> GameRoll (Multiply Credits HI-LO Game)
+User.hasMany(GameRoll, { foreignKey: 'user_id', as: 'gameRolls' });
+GameRoll.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 module.exports = {
   sequelize,
   User,
@@ -88,4 +94,6 @@ module.exports = {
   PartnerChannel,
   UserYouTubeAccount,
   UserYouTubeSubscription,
+  ContactMessage,
+  GameRoll,
 };

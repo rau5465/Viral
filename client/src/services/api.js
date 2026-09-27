@@ -173,6 +173,32 @@ export const apiService = {
   deleteAdminAnnouncement: (id) => API.delete(`/admin/announcements/${id}`),
   getAdminAnalytics: () => API.get('/admin/analytics'),
   getAdminLogs: () => API.get('/admin/logs'),
+
+  // Contact Inquiries
+  submitContact: (formData) =>
+    API.post('/contact', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  getAdminContacts: (params = {}) => API.get('/contact/admin', { params }),
+  updateAdminContactStatus: (id, status) => API.patch(`/contact/admin/${id}/status`, { status }),
+  deleteAdminContact: (id) => API.delete(`/contact/admin/${id}`),
+
+  // Multiply HI-LO Game
+  rollMultiply: (data) => API.post('/multiply/roll', data),
+  getMyRolls: () => API.get('/multiply/my-rolls'),
+  getLiveRolls: () => API.get('/multiply/live-rolls'),
+  getMultiplyStats: () => API.get('/multiply/stats'),
+
+  // Platform Settings & Credit Rate
+  getCreditRate: () => API.get('/settings/credit-rate'),
+  updateCreditRate: (data) => API.put('/settings/credit-rate', data),
+
+  // Maintenance Mode
+  getMaintenanceMode: () => API.get('/settings/maintenance'),
+  updateMaintenanceMode: (data) => API.put('/settings/maintenance', data),
+
+  // Cache Management
+  clearPlatformCache: () => API.post('/settings/cache/clear'),
 };
 
 export default API;

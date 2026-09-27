@@ -28,7 +28,7 @@ const Profile = () => {
   };
 
   return (
-    <div style={{ maxWidth: '680px', margin: '30px auto', padding: '0 20px' }}>
+    <div className="inner-page-offset" style={{ maxWidth: '680px', margin: '0 auto', padding: '52px 20px 30px 20px' }}>
       <div className="glass-card" style={{ padding: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
           <div
