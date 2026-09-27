@@ -436,6 +436,13 @@ input, select, textarea {
   gap: 8px;
 }
 
+/* Elements that should only appear in the desktop header — hidden on mobile (use side drawer instead) */
+.nav-desktop-only {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .nav-link {
   display: inline-flex;
   align-items: center;
@@ -567,6 +574,11 @@ input, select, textarea {
   }
 
   .desktop-nav {
+    display: none !important;
+  }
+
+  /* Hide desktop-only header elements (username, logout, admin badge) on mobile — use side drawer instead */
+  .nav-desktop-only {
     display: none !important;
   }
 

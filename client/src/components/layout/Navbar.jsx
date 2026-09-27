@@ -187,10 +187,10 @@ const Navbar = () => {
           )}
 
           {/* Right Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {isAuthenticated ? (
               <>
-                {/* Credits Balance Pill */}
+                {/* Credits Balance Pill — always visible */}
                 <Link
                   to="/recharge"
                   title="Redeem Recharge"
@@ -214,20 +214,21 @@ const Navbar = () => {
                   <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>CR</span>
                 </Link>
 
+                {/* Admin badge — hidden on mobile, accessible via side drawer */}
                 {isAdmin && (
                   <Link
                     to="/admin"
-                    className="btn btn-secondary"
+                    className="btn btn-secondary nav-desktop-only"
                     style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                     title="Control Panel"
                   >
                     <ShieldCheck size={16} color="#00d2d3" />
-                    <span style={{ display: 'none', smDisplay: 'inline' }}>Admin</span>
+                    <span>Admin</span>
                   </Link>
                 )}
 
-                {/* User Avatar & Profile */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Profile link + Logout — hidden on mobile, accessible via side drawer */}
+                <div className="nav-desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Link
                     to="/profile"
                     style={{
@@ -266,66 +267,69 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Link
-                  to="/partners"
-                  style={{
-                    fontSize: '0.84rem',
-                    fontWeight: 700,
-                    color: 'var(--accent)',
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    background: 'rgba(0, 238, 253, 0.08)',
-                    border: '1px solid rgba(0, 238, 253, 0.3)',
-                    textDecoration: 'none',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  🤝 For Partners
-                </Link>
-                <Link
-                  to="/about"
-                  style={{
-                    fontSize: '0.88rem',
-                    fontWeight: 600,
-                    color: 'var(--text-sub)',
-                    padding: '8px 6px',
-                    textDecoration: 'none',
-                  }}
-                >
-                  About
-                </Link>
-                <Link
-                  to="/contact"
-                  style={{
-                    fontSize: '0.88rem',
-                    fontWeight: 600,
-                    color: 'var(--text-sub)',
-                    padding: '8px 6px',
-                    textDecoration: 'none',
-                  }}
-                >
-                  Contact
-                </Link>
-                <Link
-                  to="/login"
-                  style={{
-                    fontSize: '0.88rem',
-                    fontWeight: 600,
-                    color: 'var(--text-main)',
-                    padding: '8px 10px',
-                    textDecoration: 'none',
-                  }}
-                >
-                  Log In
-                </Link>
-                <Link to="/register" className="btn btn-primary" style={{ padding: '8px 14px', fontSize: '0.88rem' }}>
-                  Join Free
-                </Link>
-              </div>
+              /* Guest links — hidden on mobile, show only hamburger */
+              <>
+                <div className="nav-desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Link
+                    to="/partners"
+                    style={{
+                      fontSize: '0.84rem',
+                      fontWeight: 700,
+                      color: 'var(--accent)',
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      background: 'rgba(0, 238, 253, 0.08)',
+                      border: '1px solid rgba(0, 238, 253, 0.3)',
+                      textDecoration: 'none',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    🤝 For Partners
+                  </Link>
+                  <Link
+                    to="/about"
+                    style={{
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: 'var(--text-sub)',
+                      padding: '8px 6px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    About
+                  </Link>
+                  <Link
+                    to="/contact"
+                    style={{
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: 'var(--text-sub)',
+                      padding: '8px 6px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Contact
+                  </Link>
+                  <Link
+                    to="/login"
+                    style={{
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: 'var(--text-main)',
+                      padding: '8px 10px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Log In
+                  </Link>
+                  <Link to="/register" className="btn btn-primary" style={{ padding: '8px 14px', fontSize: '0.88rem' }}>
+                    Join Free
+                  </Link>
+                </div>
+              </>
             )}
 
-            {/* Mobile / Side Menu Hamburger Toggle */}
+            {/* Hamburger — always visible on all screen sizes */}
             <button
               type="button"
               onClick={() => setSideDrawerOpen(!sideDrawerOpen)}
@@ -340,6 +344,7 @@ const Navbar = () => {
                 justifyContent: 'center',
                 color: '#fff',
                 cursor: 'pointer',
+                flexShrink: 0,
               }}
               title="Open Navigation Menu"
             >
