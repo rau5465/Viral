@@ -524,20 +524,8 @@ const Navbar = () => {
                     </NavLink>
 
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', margin: '12px 0 4px 6px', letterSpacing: '0.06em' }}>
-                      Explore &amp; Support
+                      Account
                     </div>
-                    <NavLink to="/partners" className="nav-link" style={{ color: 'var(--accent)' }} onClick={closeDrawer}>
-                      <Handshake size={17} />
-                      <span>For Partners &amp; Creators</span>
-                    </NavLink>
-                    <NavLink to="/about" className="nav-link" onClick={closeDrawer}>
-                      <Info size={17} />
-                      <span>About FAR</span>
-                    </NavLink>
-                    <NavLink to="/contact" className="nav-link" onClick={closeDrawer}>
-                      <Phone size={17} />
-                      <span>Contact Us</span>
-                    </NavLink>
                     <NavLink to="/profile" className="nav-link" onClick={closeDrawer}>
                       <User size={17} />
                       <span>My Profile</span>
