@@ -17,7 +17,7 @@ const AnnouncementTicker = () => {
 
     const fetchAnnouncements = async () => {
       try {
-        const res = await apiService.getAdminAnnouncements();
+        const res = await apiService.getAnnouncements();
         const list = res?.announcements || res?.data || [];
         setAnnouncements(list.filter((a) => a && (a.message || a.content || a.title)));
       } catch (_err) {

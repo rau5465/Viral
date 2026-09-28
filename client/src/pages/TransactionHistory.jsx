@@ -101,7 +101,7 @@ const TransactionHistory = () => {
           <option value="signup_bonus">Signup Bonus</option>
           <option value="referral">Referral</option>
           <option value="task">Tasks</option>
-          <option value="bonus_multiplier">4x Multiplier</option>
+          <option value="bonus_multiplier">Referral Multiplier Bonus</option>
           <option value="recharge">Recharge</option>
           <option value="adjustment">Admin Adjustment</option>
         </select>

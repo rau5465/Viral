@@ -505,7 +505,7 @@ ${formData.campaign_details.trim()}`
                 <CheckCircle2 size={16} color="#00e699" /> Custom in-app registration &amp; level-up goals
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle2 size={16} color="#00e699" /> 4X Viral Multiplier Booster announcements
+                <CheckCircle2 size={16} color="#00e699" /> Up to 5X Viral Multiplier Booster announcements
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={16} color="#00e699" /> Demographic &amp; Telecom Circle Geo-Targeting
@@ -550,7 +550,7 @@ ${formData.campaign_details.trim()}`
               2. Distributed to Users
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-              Your campaign is featured directly on the FAR Earn dashboard and broadcasted across our 4X referral community channels.
+              Your campaign is featured directly on the FAR Earn dashboard and broadcasted across our referral community channels.
             </p>
           </div>
 

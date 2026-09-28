@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Zap, Lock, KeyRound } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Lock, KeyRound, AlertTriangle, ArrowLeft, CheckCircle2, Clock } from 'lucide-react';
 import { WhatsAppIcon } from '../components/common/WhatsAppIcon';
 import { apiService } from '../services/api';
 import { useToast } from '../context/ToastContext';
@@ -9,80 +9,130 @@ const ForgotPassword = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [step, setStep] = useState(1); // 1 = Request, 2 = Verify & Reset
-  const [identifier, setIdentifier] = useState('');
-  const [code, setCode] = useState('');
+  const [step, setStep] = useState(1); // 1 = Lookup Mobile, 2 = Answer Security Questions, 3 = Locked Out
+  const [mobile, setMobile] = useState('');
+  const [questions, setQuestions] = useState({ q1: '', q2: '' });
+  const [a1, setA1] = useState('');
+  const [a2, setA2] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lockoutMessage, setLockoutMessage] = useState('');
 
-  const handleRequestOtp = async (e) => {
+  // Step 1: Submit Mobile Number to fetch Security Questions
+  const handleFetchQuestions = async (e) => {
     e.preventDefault();
-    if (!identifier || identifier.length !== 10) {
-      return toast.warning('Please enter your 10-digit WhatsApp mobile number.');
+    const cleanMobile = mobile.replace(/[^0-9]/g, '');
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      return toast.warning('Please enter a valid 10-digit WhatsApp mobile number.');
     }
 
     setLoading(true);
     try {
-      const res = await apiService.forgotPassword({ identifier });
-      toast.success(res.message);
-      if (res.demoOtp) {
-        setCode(res.demoOtp);
+      const res = await apiService.getSecurityQuestionsByMobile({ mobile: cleanMobile });
+      if (res.q1 && res.q2) {
+        setQuestions({ q1: res.q1, q2: res.q2 });
+        setStep(2);
+      } else {
+        toast.error('Could not find security questions for this account.');
       }
-      setStep(2);
     } catch (err) {
-      toast.error(err.message || 'Failed to request reset OTP.');
+      const msg = err.message || 'Failed to find account.';
+      if (msg.includes('locked') || err.statusCode === 403) {
+        setLockoutMessage(msg);
+        setStep(3);
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // Step 2: Answer 2 Security Questions and Set New Password
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!code || !newPassword) {
-      return toast.warning('Please enter the OTP and your new password.');
+
+    if (!a1.trim() || !a2.trim()) {
+      return toast.warning('Please answer both security questions.');
+    }
+
+    if (newPassword.length < 6) {
+      return toast.error('New password must be at least 6 characters long.');
+    }
+
+    if (newPassword !== confirmPassword) {
+      return toast.error('Passwords do not match.');
     }
 
     setLoading(true);
     try {
-      const res = await apiService.resetPassword({ identifier, code, newPassword });
-      toast.success(res.message);
+      const res = await apiService.resetPasswordWithSecurityQuestions({
+        mobile: mobile.replace(/[^0-9]/g, ''),
+        a1: a1.trim(),
+        a2: a2.trim(),
+        newPassword,
+      });
+
+      toast.success(res.message || 'Password reset successfully! Please sign in.');
       navigate('/login');
     } catch (err) {
-      toast.error(err.message || 'Failed to reset password.');
+      const msg = err.message || 'Incorrect security answers.';
+      if (msg.includes('locked') || msg.includes('tomorrow') || msg.includes('after 24 hours')) {
+        setLockoutMessage(msg);
+        setStep(3); // Transition to lockout view
+        toast.error(msg);
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '440px', margin: '60px auto', padding: '0 20px' }}>
-      <div className="glass-card" style={{ padding: '32px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+    <div style={{ maxWidth: '480px', margin: '48px auto', padding: '0 20px' }}>
+      <div className="glass-card" style={{ padding: '32px 26px' }}>
+        {/* Header Icon */}
+        <div style={{ textAlign: 'center', marginBottom: '22px' }}>
           <div
             style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'var(--primary-gradient)',
+              width: '52px',
+              height: '52px',
+              borderRadius: '16px',
+              background: step === 3
+                ? 'rgba(239, 68, 68, 0.18)'
+                : 'linear-gradient(135deg, rgba(0, 238, 253, 0.2), rgba(0, 102, 255, 0.2))',
+              border: step === 3 ? '1.5px solid #ef4444' : '1.5px solid #00eefd',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 12px auto',
+              boxShadow: step === 3 ? '0 0 24px rgba(239, 68, 68, 0.3)' : '0 0 24px rgba(0, 238, 253, 0.3)',
             }}
           >
-            <Zap size={26} color="#fff" />
+            {step === 3 ? (
+              <Clock size={28} color="#ef4444" />
+            ) : (
+              <ShieldCheck size={28} color="#00eefd" />
+            )}
           </div>
-          <h2 style={{ fontSize: '1.6rem', marginBottom: '6px' }}>Reset Password</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            {step === 1
-              ? 'Enter your registered WhatsApp mobile number to receive a reset code'
-              : 'Enter the 6-digit code and your new password'}
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '6px' }}>
+            {step === 1 && 'Reset Your Password'}
+            {step === 2 && 'Answer Security Questions'}
+            {step === 3 && 'Password Reset Locked'}
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: '1.45', margin: 0 }}>
+            {step === 1 && 'Enter your registered WhatsApp mobile number to verify your security questions.'}
+            {step === 2 && 'Answer your 2 configured questions below to verify identity and set your new password.'}
+            {step === 3 && 'You have reached the maximum allowed incorrect attempts.'}
           </p>
         </div>
 
-        {step === 1 ? (
-          <form onSubmit={handleRequestOtp}>
-            <div className="form-group">
+        {/* STEP 1: Enter WhatsApp Mobile */}
+        {step === 1 && (
+          <form onSubmit={handleFetchQuestions}>
+            <div className="form-group" style={{ marginBottom: '18px' }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <WhatsAppIcon size={16} />
                 <span>WhatsApp Mobile Number</span>
@@ -110,8 +160,8 @@ const ForgotPassword = () => {
                   type="tel"
                   required
                   maxLength={10}
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
                   placeholder="9876543210"
                   className="form-input"
                   style={{ paddingLeft: '80px', width: '100%', letterSpacing: '1px', fontWeight: 600 }}
@@ -123,48 +173,158 @@ const ForgotPassword = () => {
               type="submit"
               disabled={loading}
               className="btn btn-primary"
-              style={{ width: '100%', padding: '14px', marginTop: '10px' }}
+              style={{ width: '100%', padding: '13px', fontWeight: 700 }}
             >
-              {loading ? 'Sending OTP...' : 'Send Reset Code'}
+              {loading ? 'Finding Account...' : 'Continue to Security Questions'}
             </button>
           </form>
-        ) : (
+        )}
+
+        {/* STEP 2: Answer 2 Security Questions */}
+        {step === 2 && (
           <form onSubmit={handleResetPassword}>
-            <div className="form-group">
-              <label className="form-label">6-Digit Reset Code</label>
+            {/* Target Account Badge */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '10px',
+                padding: '8px 12px',
+                marginBottom: '16px',
+                fontSize: '0.82rem',
+              }}
+            >
+              <span style={{ color: 'var(--text-sub)' }}>Account:</span>
+              <span style={{ fontWeight: 700, color: '#00eefd' }}>+91 {mobile}</span>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                Change
+              </button>
+            </div>
+
+            {/* Crucial Lockout Warning Notice */}
+            <div
+              style={{
+                background: 'rgba(245, 158, 11, 0.12)',
+                border: '1.5px solid rgba(245, 158, 11, 0.45)',
+                borderRadius: '12px',
+                padding: '12px 14px',
+                marginBottom: '18px',
+                fontSize: '0.82rem',
+                lineHeight: '1.45',
+                color: '#fef08a',
+                display: 'flex',
+                gap: '10px',
+                alignItems: 'flex-start',
+              }}
+            >
+              <AlertTriangle size={18} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong style={{ color: '#fff' }}>Strict Warning:</strong> You must enter the exact answers. If any answer is incorrect, password reset will be <strong>strictly locked until tomorrow (after 24 hours)</strong>.
+              </div>
+            </div>
+
+            {/* Question 1 */}
+            <div className="form-group" style={{ marginBottom: '14px' }}>
+              <label className="form-label" style={{ fontSize: '0.84rem', fontWeight: 700, color: '#00eefd' }}>
+                Question 1: {questions.q1}
+              </label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="text"
-                  maxLength={6}
                   required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="123456"
+                  value={a1}
+                  onChange={(e) => setA1(e.target.value)}
+                  placeholder="Enter your answer"
                   className="form-input"
-                  style={{ paddingLeft: '40px', letterSpacing: '4px' }}
+                  style={{ paddingLeft: '38px', fontSize: '0.88rem' }}
                 />
                 <KeyRound
-                  size={18}
+                  size={16}
                   color="var(--text-sub)"
                   style={{ position: 'absolute', left: '12px', top: '14px' }}
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">New Password</label>
+            {/* Question 2 */}
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '0.84rem', fontWeight: 700, color: '#00eefd' }}>
+                Question 2: {questions.q2}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  required
+                  value={a2}
+                  onChange={(e) => setA2(e.target.value)}
+                  placeholder="Enter your answer"
+                  className="form-input"
+                  style={{ paddingLeft: '38px', fontSize: '0.88rem' }}
+                />
+                <KeyRound
+                  size={16}
+                  color="var(--text-sub)"
+                  style={{ position: 'absolute', left: '12px', top: '14px' }}
+                />
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div className="form-group" style={{ marginBottom: '14px' }}>
+              <label className="form-label" style={{ fontSize: '0.84rem' }}>
+                New Password
+              </label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="password"
                   required
+                  minLength={6}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 6 characters"
                   className="form-input"
-                  style={{ paddingLeft: '40px' }}
+                  style={{ paddingLeft: '38px' }}
                 />
                 <Lock
-                  size={18}
+                  size={16}
+                  color="var(--text-sub)"
+                  style={{ position: 'absolute', left: '12px', top: '14px' }}
+                />
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label" style={{ fontSize: '0.84rem' }}>
+                Confirm New Password
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="form-input"
+                  style={{ paddingLeft: '38px' }}
+                />
+                <Lock
+                  size={16}
                   color="var(--text-sub)"
                   style={{ position: 'absolute', left: '12px', top: '14px' }}
                 />
@@ -175,16 +335,67 @@ const ForgotPassword = () => {
               type="submit"
               disabled={loading}
               className="btn btn-primary"
-              style={{ width: '100%', padding: '14px', marginTop: '10px' }}
+              style={{ width: '100%', padding: '13px', fontWeight: 800 }}
             >
-              {loading ? 'Resetting Password...' : 'Save New Password & Login'}
+              {loading ? 'Verifying Answers...' : 'Verify Answers & Reset Password'}
             </button>
           </form>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem' }}>
-          <Link to="/login" style={{ color: 'var(--text-muted)' }}>
-            Back to Sign In
+        {/* STEP 3: Locked Out View */}
+        {step === 3 && (
+          <div style={{ textAlign: 'center', padding: '10px 0' }}>
+            <div
+              style={{
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1.5px solid rgba(239, 68, 68, 0.5)',
+                borderRadius: '14px',
+                padding: '16px',
+                marginBottom: '20px',
+                textAlign: 'left',
+                fontSize: '0.88rem',
+                lineHeight: '1.5',
+                color: '#fca5a5',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444', fontWeight: 800, marginBottom: '6px' }}>
+                <ShieldAlert size={18} />
+                <span>Account Password Reset Locked</span>
+              </div>
+              <p style={{ margin: 0, color: '#fecaca' }}>
+                {lockoutMessage ||
+                  'Your password reset is locked due to incorrect security answers. As warned, you can try again tomorrow.'}
+              </p>
+            </div>
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-sub)', marginBottom: '20px' }}>
+              If you believe this is an error or need immediate access, please contact our support team via WhatsApp.
+            </p>
+
+            <Link
+              to="/contact"
+              className="btn btn-secondary"
+              style={{ width: '100%', display: 'block', textAlign: 'center', padding: '12px', marginBottom: '10px' }}
+            >
+              Contact Support
+            </Link>
+          </div>
+        )}
+
+        {/* Back Link */}
+        <div style={{ textAlign: 'center', marginTop: '22px', fontSize: '0.88rem' }}>
+          <Link
+            to="/login"
+            style={{
+              color: 'var(--text-muted)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              textDecoration: 'none',
+            }}
+          >
+            <ArrowLeft size={15} />
+            <span>Back to Sign In</span>
           </Link>
         </div>
       </div>

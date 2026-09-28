@@ -10,6 +10,8 @@ class User extends Model {
   toJSON() {
     const values = { ...this.get() };
     delete values.password_hash;
+    delete values.security_a1;
+    delete values.security_a2;
     return values;
   }
 }
@@ -79,6 +81,42 @@ User.init(
     role: {
       type: DataTypes.ENUM('user', 'admin'),
       defaultValue: 'user',
+    },
+    device_fingerprint: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+    },
+    signup_ip: {
+      type: DataTypes.STRING(45),
+      allowNull: true,
+    },
+    security_q1: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    security_a1: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    security_q2: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    security_a2: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    security_questions_set: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    reset_locked_until: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    reset_attempts_failed: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
     },
   },
   {

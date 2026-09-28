@@ -1,7 +1,7 @@
 {
-  "name": "viral-recharge-server",
+  "name": "far-recharge-server",
   "version": "1.0.0",
-  "description": "Backend API for ViralRecharge platform",
+  "description": "Backend API for FAR (Forget About Recharge) platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -21,7 +21,7 @@
     "sequelize",
     "redis"
   ],
-  "author": "ViralRecharge Team",
+  "author": "FAR Team",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.2",

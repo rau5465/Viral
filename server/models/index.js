@@ -14,6 +14,8 @@ const UserYouTubeAccount = require('./UserYouTubeAccount');
 const UserYouTubeSubscription = require('./UserYouTubeSubscription');
 const ContactMessage = require('./ContactMessage');
 const GameRoll = require('./GameRoll');
+const PhoneVerification = require('./PhoneVerification');
+const ActiveUserSnapshot = require('./ActiveUserSnapshot');
 
 // 1. User <-> Referral
 User.hasMany(Referral, { foreignKey: 'referrer_id', as: 'referredUsers' });
@@ -96,4 +98,6 @@ module.exports = {
   UserYouTubeSubscription,
   ContactMessage,
   GameRoll,
+  PhoneVerification,
+  ActiveUserSnapshot,
 };

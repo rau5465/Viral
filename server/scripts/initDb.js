@@ -13,7 +13,7 @@ const dbPassword = process.env.DB_PASSWORD || '';
 const dbName = process.env.DB_NAME || 'viral';
 
 async function initDatabase() {
-  console.log('🔄 Initializing ViralRecharge MySQL Database...');
+  console.log('🔄 Initializing FAR (Forget About Recharge) MySQL Database...');
   console.log(`📡 Connecting to MySQL server at ${dbHost}:${dbPort} as user "${dbUser}"...`);
 
   let connection;

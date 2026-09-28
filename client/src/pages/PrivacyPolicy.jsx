@@ -92,7 +92,7 @@ const PrivacyPolicy = () => {
               <strong>Mobile Recharge Details:</strong> 10-digit Indian prepaid mobile number, telecom circle/state, and selected carrier (Jio, Airtel, Vi, or BSNL) submitted exclusively when you redeem your earned credits.
             </li>
             <li>
-              <strong>Engagement &amp; Task Verification:</strong> Verified subscription IDs via the official Google YouTube API, task completion confirmations, timestamp logs, and referral invite links associated with the 2-Hour 4X Multiplier Challenge.
+              <strong>Engagement &amp; Task Verification:</strong> Verified subscription IDs via the official Google YouTube API, task completion confirmations, timestamp logs, and referral invite links associated with the 2-Hour Referral Multiplier Challenge.
             </li>
             <li>
               <strong>Technical &amp; Device Identifiers:</strong> IP address, device type, browser user-agent, and anti-fraud telemetry used to prevent automated bot networks, duplicate multi-accounts, and referral exploitation.

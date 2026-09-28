@@ -37,7 +37,7 @@ async function testYouTubeSystem() {
       where: { mobile: '9876543210' },
       defaults: {
         full_name: 'YouTube Test User',
-        email: 'youtubetest@viralrecharge.com',
+        email: 'youtubetest@far.com',
         password_hash: '$2b$10$41jDYEPB46T0P2V3L23WM.6jiBYpNWRVfDsqInAI7ZU6/vRPEAZ0K',
         referral_code: 'YTTEST01',
         credit_balance: 0,

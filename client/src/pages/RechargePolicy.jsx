@@ -93,7 +93,7 @@ const RechargePolicy = () => {
             gateways across India to provide instant, automated mobile recharge fulfillment.
           </p>
           <p style={{ marginTop: '10px' }}>
-            Credits earned through our micro-task engine, sponsored brand offers, and 4X viral referral milestones can be redeemed
+            Credits earned through our micro-task engine, sponsored brand offers, and up to 5X viral referral milestones can be redeemed
             towards prepaid packs for <strong>Reliance Jio, Bharti Airtel, Vodafone Idea (Vi), and Bharat Sanchar Nigam Limited (BSNL)</strong>.
             One FAR Credit is pegged at a 1:1 equivalent value to Indian Rupees (₹1.00) when redeeming eligible prepaid catalog packs.
           </p>

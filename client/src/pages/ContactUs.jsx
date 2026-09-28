@@ -36,7 +36,7 @@ const ContactUs = () => {
   const subjects = [
     'Recharge Delivery / Delay',
     'Task Verification Issue',
-    '4X Referral Bonus Question',
+    'Referral Bonus Question',
     'Account Access & Security',
     'Brand Partnership / Advertising',
     'Bug Report / Feedback',

@@ -96,7 +96,7 @@ const About = () => {
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>Operators (Jio, Airtel, Vi, BSNL)</div>
         </div>
         <div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fdcb6e' }}>4X Multiplier</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fdcb6e' }}>Up to 5X</div>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>Viral Referral Growth Engine</div>
         </div>
         <div>
@@ -168,9 +168,9 @@ const About = () => {
                 border: '1px solid rgba(255, 255, 255, 0.07)',
               }}
             >
-              <div style={{ color: '#fdcb6e', fontWeight: 700, marginBottom: '6px' }}>2. 4X Referral Multiplier</div>
+              <div style={{ color: '#fdcb6e', fontWeight: 700, marginBottom: '6px' }}>2. Up to 5X Referral Rewards</div>
               <p style={{ fontSize: '0.88rem', margin: 0, color: 'var(--text-muted)' }}>
-                Invite friends and unlock up to 4X bonus credits when your network verifies tasks, allowing your credit balance to compound exponentially.
+                Get Up to 5x Rewards On Refer if you share app in next two hours, allowing your credit balance to compound quickly.
               </p>
             </div>
 

@@ -76,7 +76,7 @@ app.get('/api/health', async (req, res) => {
 
   res.status(200).json({
     status: 'success',
-    app: 'ViralRecharge API',
+    app: 'FAR (Forget About Recharge) API',
     uptime: `${Math.floor(process.uptime())}s`,
     timestamp: new Date().toISOString(),
     database: {

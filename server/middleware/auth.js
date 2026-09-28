@@ -1,6 +1,7 @@
 const { User } = require('../models');
 const { verifyToken } = require('../utils/token');
 const { get, set, del } = require('../config/redis');
+const activeUserService = require('../services/activeUserService');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -70,6 +71,10 @@ const protect = asyncHandler(async (req, res, next) => {
     }
 
     req.user = currentUser;
+
+    // Passive Heartbeat tracking: Zero extra network request required from client
+    activeUserService.recordHeartbeat(currentUser.id, true).catch(() => {});
+
     next();
   } catch {
     return next(new AppError('Invalid or expired authentication token. Please log in again.', 401));

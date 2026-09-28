@@ -5,7 +5,7 @@ const { getActiveAnnouncements } = require('../services/announcementService');
 const { getPartnerChannels } = require('../services/youtubeService');
 
 const runTests = async () => {
-  console.log('🧪 Starting ViralRecharge Redis & High-Traffic Optimization Test Suite...\n');
+  console.log('🧪 Starting FAR (Forget About Recharge) Redis & High-Traffic Optimization Test Suite...\n');
   let passed = 0;
   let failed = 0;
 

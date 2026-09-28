@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Navigate } from 'react-router-dom';
 import {
   Dices,
   Flame,
@@ -73,8 +74,12 @@ const playSound = (type, soundEnabled = true) => {
 };
 
 const MultiplyGame = () => {
-  const { user, refreshUser, updateUserBalance } = useAuth();
+  const { user, isAuthenticated, loading, refreshUser, updateUserBalance } = useAuth();
   const toast = useToast();
+
+  if (!loading && (!isAuthenticated || !user)) {
+    return <Navigate to="/login" replace />;
+  }
 
   const [balance, setBalance] = useState(user?.credit_balance ?? 0);
   const [betAmount, setBetAmount] = useState(1);

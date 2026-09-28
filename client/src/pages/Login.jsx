@@ -51,6 +51,7 @@ const Login = () => {
   const handleQuickFill = (demoPhone, pass) => {
     setMobile(demoPhone);
     setPassword(pass);
+    toast.info(`Demo credentials filled: ${demoPhone} / ${pass}`);
   };
 
   return (
@@ -70,7 +71,7 @@ const Login = () => {
           />
           <h2 style={{ fontSize: '1.6rem', marginBottom: '6px' }}>Welcome Back</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Sign in with your WhatsApp mobile number • No OTP required
+            Sign in with your registered mobile number &amp; password
           </p>
         </div>
 
@@ -175,9 +176,9 @@ const Login = () => {
           style={{
             marginTop: '24px',
             padding: '14px',
-            borderRadius: '10px',
+            borderRadius: '12px',
             background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px dashed var(--border-glass)',
+            border: '1px dashed rgba(0, 238, 253, 0.35)',
           }}
         >
           <div
@@ -185,31 +186,51 @@ const Login = () => {
               fontSize: '0.75rem',
               fontWeight: 700,
               textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              marginBottom: '8px',
+              color: 'var(--accent)',
+              marginBottom: '10px',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              justifyContent: 'space-between',
             }}
           >
-            <ShieldAlert size={14} color="#fdcb6e" /> Quick Demo Fill
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <ShieldAlert size={14} color="#00eefd" />
+              <span>Verified Demo Credentials</span>
+            </div>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>1-Tap Fill</span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button
               type="button"
               onClick={() => handleQuickFill('9999999999', 'Admin@123')}
               className="btn btn-secondary"
-              style={{ flex: 1, padding: '6px', fontSize: '0.75rem' }}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 12px',
+                fontSize: '0.8rem',
+                borderRadius: '8px',
+              }}
             >
-              Demo Admin (9999999999)
+              <span><strong>Admin:</strong> 9999999999</span>
+              <span style={{ color: '#00eefd', fontSize: '0.75rem' }}>Admin@123</span>
             </button>
             <button
               type="button"
               onClick={() => handleQuickFill('9876543210', 'Password@123')}
               className="btn btn-secondary"
-              style={{ flex: 1, padding: '6px', fontSize: '0.75rem' }}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 12px',
+                fontSize: '0.8rem',
+                borderRadius: '8px',
+              }}
             >
-              Demo User (9876543210)
+              <span><strong>User:</strong> 9876543210</span>
+              <span style={{ color: '#00eefd', fontSize: '0.75rem' }}>Password@123</span>
             </button>
           </div>
         </div>

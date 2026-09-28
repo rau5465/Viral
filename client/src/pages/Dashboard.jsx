@@ -96,7 +96,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* 2-Hour 4x Viral Bonus Widget */}
+      {/* 2-Hour Referral Bonus Widget */}
       <BonusTimerWidget
         bonus={bonus}
         referralCode={user?.referral_code}

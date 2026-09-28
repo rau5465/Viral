@@ -48,42 +48,41 @@ const Footer = () => {
             <li><Link to="/tasks" style={{ color: 'var(--text-muted)' }}>Earn Credits</Link></li>
             <li><Link to="/referrals" style={{ color: 'var(--text-muted)' }}>Invite &amp; Earn (5x Bonus)</Link></li>
             <li><Link to="/recharge" style={{ color: 'var(--text-muted)' }}>Redeem Recharge</Link></li>
-            <li><Link to="/multiply" style={{ color: '#fde502' }}>🎲 Multiplier Game</Link></li>
             <li><Link to="/leaderboard" style={{ color: 'var(--text-muted)' }}>Top Referrers Leaderboard</Link></li>
           </ul>
         </div>
 
-        {/* Partners & Creators */}
+        {/* Advertisers & Creators */}
         <div>
-          <h4 style={{ fontSize: '0.95rem', marginBottom: '14px', color: '#fff' }}>For Partners &amp; Brands</h4>
+          <h4 style={{ fontSize: '0.95rem', marginBottom: '14px', color: '#fff' }}>For Advertisers &amp; Sponsors</h4>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
             <li>
-              <Link to="/partners" style={{ color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                🤝 Partner With Us
+              <Link to="/advertisers" style={{ color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                📢 Advertise with Us
               </Link>
             </li>
             <li>
-              <Link to="/partners" style={{ color: 'var(--text-muted)' }}>
+              <Link to="/advertisers" style={{ color: 'var(--text-muted)' }}>
                 YouTube Creator Growth
               </Link>
             </li>
             <li>
-              <Link to="/partners" style={{ color: 'var(--text-muted)' }}>
+              <Link to="/advertisers" style={{ color: 'var(--text-muted)' }}>
                 Website Traffic &amp; Dwell
               </Link>
             </li>
             <li>
-              <Link to="/partners" style={{ color: 'var(--text-muted)' }}>
+              <Link to="/advertisers" style={{ color: 'var(--text-muted)' }}>
                 App Installs &amp; CPA
               </Link>
             </li>
             <li>
-              <Link to="/partners#calculator" style={{ color: 'var(--text-muted)' }}>
+              <Link to="/advertisers#calculator" style={{ color: 'var(--text-muted)' }}>
                 Campaign ROI Calculator
               </Link>
             </li>
             <li>
-              <Link to="/partners#proposal-form" style={{ color: '#00e699', fontWeight: 600 }}>
+              <Link to="/advertisers#proposal-form" style={{ color: '#00e699', fontWeight: 600 }}>
                 ⚡ Submit Campaign Proposal
               </Link>
             </li>

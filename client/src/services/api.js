@@ -40,6 +40,15 @@ API.interceptors.response.use(
           localStorage.removeItem('vr_token');
           localStorage.removeItem('vr_refresh_token');
           localStorage.removeItem('vr_user');
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
+      } else {
+        localStorage.removeItem('vr_token');
+        localStorage.removeItem('vr_refresh_token');
+        localStorage.removeItem('vr_user');
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/' && !window.location.pathname.startsWith('/about') && !window.location.pathname.startsWith('/contact') && !window.location.pathname.startsWith('/terms') && !window.location.pathname.startsWith('/privacy') && !window.location.pathname.startsWith('/refund') && !window.location.pathname.startsWith('/advertise') && !window.location.pathname.startsWith('/partners')) {
           window.location.href = '/login';
         }
       }
@@ -56,6 +65,8 @@ export const apiService = {
   verifyOtp: (data) => API.post('/auth/verify-otp', data),
   forgotPassword: (data) => API.post('/auth/forgot-password', data),
   resetPassword: (data) => API.post('/auth/reset-password', data),
+  getSecurityQuestionsByMobile: (data) => API.post('/auth/security-questions/get-by-mobile', data),
+  resetPasswordWithSecurityQuestions: (data) => API.post('/auth/security-questions/reset-password', data),
   googleAuth: (data) => API.post('/auth/google', data),
   logout: () => {
     const refreshToken = localStorage.getItem('vr_refresh_token');
@@ -67,6 +78,8 @@ export const apiService = {
   getProfile: () => API.get('/user/profile'),
   updateProfile: (data) => API.put('/user/profile', data),
   getBalance: () => API.get('/user/balance'),
+  setSecurityQuestions: (data) => API.post('/user/security-questions', data),
+  getSecurityQuestionsStatus: () => API.get('/user/security-questions'),
 
   // Tasks (Intelligent Client-Side Caching with 304 Versioning)
   getTasksVersion: () => API.get('/tasks/version'),
@@ -171,6 +184,7 @@ export const apiService = {
   getAdminAnnouncements: () => API.get('/admin/announcements'),
   createAdminAnnouncement: (data) => API.post('/admin/announcements', data),
   deleteAdminAnnouncement: (id) => API.delete(`/admin/announcements/${id}`),
+  getAnnouncements: () => API.get('/settings/announcements'),
   getAdminAnalytics: () => API.get('/admin/analytics'),
   getAdminLogs: () => API.get('/admin/logs'),
 
@@ -196,6 +210,21 @@ export const apiService = {
   // Maintenance Mode
   getMaintenanceMode: () => API.get('/settings/maintenance'),
   updateMaintenanceMode: (data) => API.put('/settings/maintenance', data),
+
+  // Referral Reward Settings
+  getReferralSettings: () => API.get('/settings/referral'),
+  updateReferralSettings: (data) => API.put('/settings/referral', data),
+
+  // WhatsApp wacli Phone Verification
+  initiateWhatsAppVerification: (mobile) => API.post('/auth/verify/initiate', { mobile }),
+  checkWhatsAppVerificationStatus: (mobile, code) => API.get('/auth/verify/status', { params: { mobile, code } }),
+  simulateWhatsAppVerification: (mobile, code) => API.post('/auth/verify/simulate', { mobile, code }),
+  getWhatsAppVerificationSettings: () => API.get('/settings/whatsapp-verification'),
+  updateWhatsAppVerificationSettings: (data) => API.put('/settings/whatsapp-verification', data),
+
+  // Live User Analytics & Heartbeat
+  getLiveUserAnalytics: (params = {}) => API.get('/admin/live-users', { params }),
+  sendHeartbeat: (clientId) => API.post('/auth/heartbeat', { client_id: clientId }),
 
   // Cache Management
   clearPlatformCache: () => API.post('/settings/cache/clear'),

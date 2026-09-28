@@ -12,6 +12,7 @@ const { awardCredits, deductCredits } = require('../services/creditService');
 const { invalidateUserCache } = require('../middleware/auth');
 const { invalidateTasksCache, bumpTasksVersion } = require('../services/taskService');
 const { invalidateAnnouncementsCache } = require('../services/announcementService');
+const activeUserService = require('../services/activeUserService');
 const { getOrSet, del } = require('../config/redis');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
@@ -70,9 +71,17 @@ const getDashboardStats = asyncHandler(async (req, res, _next) => {
     30
   );
 
+  // Real-time live active users (computed instantly from Redis / Memory with zero database hit)
+  const liveStats = await activeUserService.getCurrentLiveStats();
+
   res.status(200).json({
     status: 'success',
-    stats,
+    stats: {
+      ...stats,
+      liveUsers: liveStats.totalLive,
+      liveAuthenticated: liveStats.authenticated,
+      liveGuests: liveStats.guests,
+    },
   });
 });
 
@@ -399,6 +408,13 @@ const getAdminLogs = asyncHandler(async (req, res, _next) => {
   res.status(200).json({ status: 'success', count: logs.length, logs });
 });
 
+// 4.9 Live User Time-Series Analytics
+const getLiveUserAnalytics = asyncHandler(async (req, res, _next) => {
+  const { range = '24h' } = req.query;
+  const data = await activeUserService.getLiveUserHistory(range);
+  res.status(200).json({ status: 'success', data });
+});
+
 module.exports = {
   getDashboardStats,
   getUsers,
@@ -415,4 +431,5 @@ module.exports = {
   createAnnouncement,
   deleteAnnouncement,
   getAdminLogs,
+  getLiveUserAnalytics,
 };

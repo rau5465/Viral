@@ -30,10 +30,10 @@ const Landing = () => {
   const liveRecharges = [
     { name: 'Rahul M.', location: 'Delhi', op: 'Jio', amount: '₹349', pack: '2GB/day True 5G (28 Days)', time: '2m ago' },
     { name: 'Priya K.', location: 'Mumbai', op: 'Airtel', amount: '₹349', pack: '1.5GB/day (28 Days)', time: '4m ago' },
-    { name: 'Ananya S.', location: 'Bangalore', op: '4X Bonus', amount: '100 CR', pack: 'Viral Challenge Won', time: '6m ago' },
-    { name: 'Vikram P.', location: 'Kolkata', op: 'Vi', amount: '₹19', pack: '1GB Data Booster', time: '9m ago' },
+    { name: 'Ananya S.', location: 'Bangalore', op: '5X Bonus', amount: '350 CR', pack: 'Referral Reward Won', time: '6m ago' },
+    { name: 'Vikram P.', location: 'Kolkata', op: 'Vi', amount: '₹409', pack: '2GB/day Hero Unlimited (28 Days)', time: '9m ago' },
     { name: 'Sneha R.', location: 'Pune', op: 'Jio', amount: '₹859', pack: '2GB/day True 5G (84 Days)', time: '12m ago' },
-    { name: 'Amit G.', location: 'Hyderabad', op: 'BSNL', amount: '₹107', pack: '35 Days Validity Pack', time: '15m ago' },
+    { name: 'Amit G.', location: 'Hyderabad', op: 'BSNL', amount: '₹397', pack: '2GB/day (150 Days Validity)', time: '15m ago' },
   ];
 
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -45,60 +45,60 @@ const Landing = () => {
     return () => clearInterval(timer);
   }, [liveRecharges.length]);
 
-  // 2. Savings Calculator State (Current Real Indian Telecom Rates)
+  // 2. Savings Calculator State (Current Real Indian Telecom Rates >= 300)
   const [calcOperator, setCalcOperator] = useState('Jio');
-  const [calcPlan, setCalcPlan] = useState('monthly'); // 'booster', 'monthly', 'quarterly'
+  const [calcPlan, setCalcPlan] = useState('monthly'); // 'monthly', 'quarterly', 'annual'
 
   const planRates = {
-    Jio: { booster: 19, monthly: 349, quarterly: 859 },
-    Airtel: { booster: 22, monthly: 349, quarterly: 859 },
-    Vi: { booster: 19, monthly: 349, quarterly: 859 },
-    BSNL: { booster: 16, monthly: 199, quarterly: 599 },
+    Jio: { monthly: 349, quarterly: 859, annual: 3599 },
+    Airtel: { monthly: 349, quarterly: 859, annual: 3599 },
+    Vi: { monthly: 349, quarterly: 859, annual: 3199 },
+    BSNL: { monthly: 397, quarterly: 599, annual: 1999 },
   };
 
   const currentPlanCost = planRates[calcOperator][calcPlan];
   const yearlySavings =
-    calcPlan === 'booster'
-      ? currentPlanCost * 30 * 12
-      : calcPlan === 'monthly'
-      ? currentPlanCost * 12
-      : currentPlanCost * 4;
+    calcPlan === 'annual'
+      ? currentPlanCost
+      : calcPlan === 'quarterly'
+      ? currentPlanCost * 4
+      : currentPlanCost * 12;
 
-  // 3. Genuine Indian Telecom Operator Plan Preview Tabs (2024-2026 Tariff Structure)
+  // 3. Genuine Indian Telecom Operator Plan Preview Tabs (Strictly >= ₹300 Plans)
   const [selectedOpTab, setSelectedOpTab] = useState('Jio');
 
   const operatorPacks = {
     Jio: [
-      { name: '1GB High Speed Data Booster', credits: 19, validity: 'Active Plan Base', tag: 'Fast 1-Click' },
-      { name: '1.5GB/Day + Unlimited 5G Calls', credits: 299, validity: '28 Days', tag: '🔥 Daily Saver' },
       { name: '2GB/Day True 5G Unlimited Plan', credits: 349, validity: '28 Days', tag: '⚡ Top 5G Choice' },
       { name: '2.5GB/Day True 5G Super Pack', credits: 399, validity: '28 Days', tag: 'High Speed' },
+      { name: '3GB/Day True 5G + OTT Subscription', credits: 449, validity: '28 Days', tag: '🔥 Entertainment' },
       { name: '1.5GB/Day All-India Long Term', credits: 799, validity: '84 Days', tag: 'Long Term' },
       { name: '2GB/Day True 5G Mega Saver', credits: 859, validity: '84 Days', tag: '⚡ Best Value' },
+      { name: '2.5GB/Day Unlimited 365 Days Hero', credits: 3599, validity: '365 Days', tag: '👑 Annual Pack' },
     ],
     Airtel: [
-      { name: '1GB 4G/5G Emergency Data', credits: 22, validity: '1 Day', tag: 'Instant Booster' },
-      { name: '1GB/Day + Unlimited Calling', credits: 299, validity: '28 Days', tag: 'Essential' },
       { name: '1.5GB/Day + Unlimited 5G + Thanks', credits: 349, validity: '28 Days', tag: '🔥 Most Popular' },
+      { name: '2GB/Day Unlimited 5G + Wynk Music', credits: 379, validity: '28 Days', tag: 'Daily Saver' },
       { name: '2.5GB/Day Unlimited 5G + OTT', credits: 409, validity: '28 Days', tag: 'Entertainment' },
+      { name: '3GB/Day Unlimited 5G Power Pack', credits: 549, validity: '56 Days', tag: 'Extended 5G' },
       { name: '1.5GB/Day All India 84 Days', credits: 859, validity: '84 Days', tag: '⚡ Best Value' },
       { name: '2GB/Day True 5G + Xstream Play', credits: 979, validity: '84 Days', tag: 'Mega Saver' },
     ],
     Vi: [
-      { name: '1GB Unlimited High-Speed Data', credits: 19, validity: '1 Day', tag: 'Instant Booster' },
-      { name: '1GB/Day Unlimited Calling', credits: 299, validity: '28 Days', tag: 'Essential' },
       { name: '1.5GB/Day + Binge All Night (12-6 AM)', credits: 349, validity: '28 Days', tag: '🔥 Hero Unlimited' },
       { name: '2GB/Day + Weekend Rollover + Data Delight', credits: 409, validity: '28 Days', tag: 'Power Pack' },
+      { name: '2.5GB/Day + Binge All Night + OTT', credits: 479, validity: '28 Days', tag: 'Streaming Pack' },
+      { name: '1.5GB/Day + Hero Unlimited 56 Days', credits: 539, validity: '56 Days', tag: 'Extended Value' },
       { name: '1.5GB/Day + Hero Unlimited 84 Days', credits: 859, validity: '84 Days', tag: '⚡ Best Value' },
       { name: '2GB/Day + Binge All Night 84 Days', credits: 979, validity: '84 Days', tag: 'Mega Saver' },
     ],
     BSNL: [
-      { name: '2GB High Speed Data Voucher', credits: 16, validity: '1 Day', tag: 'Low Cost' },
-      { name: '3GB Data + 200 Mins Voice Validity', credits: 107, validity: '35 Days', tag: 'Budget Leader' },
-      { name: '2GB/Day + Unlimited Voice + 100 SMS', credits: 199, validity: '30 Days', tag: '🔥 Value King' },
-      { name: '2GB/Day + Unlimited Calls (45 Days)', credits: 249, validity: '45 Days', tag: 'Extended Pack' },
       { name: '2GB/Day (30D) + 150 Days Validity', credits: 397, validity: '150 Days', tag: 'Long Validity' },
+      { name: '2GB/Day Unlimited Voice & SMS', credits: 485, validity: '82 Days', tag: '🔥 Super Saver' },
       { name: '3GB/Day + Unlimited Voice 84 Days', credits: 599, validity: '84 Days', tag: '⚡ Best Value' },
+      { name: '2GB/Day Unlimited 160 Days Pack', credits: 997, validity: '160 Days', tag: 'Extended Pack' },
+      { name: '2GB/Day All-India 365 Days', credits: 1999, validity: '365 Days', tag: 'Annual Plan' },
+      { name: '3GB/Day Ultimate 395 Days Pack', credits: 2399, validity: '395 Days', tag: '👑 King of Validity' },
     ],
   };
 
@@ -106,9 +106,9 @@ const Landing = () => {
   const earningMethods = [
     {
       icon: <Flame size={26} color="#fda702" />,
-      title: '4X Viral Referrals',
-      reward: '50 - 100 Credits',
-      desc: 'Invite friends. Bring 2 friends in your first 2 hours to 4X your signup bonus to 100 Credits!',
+      title: 'Up to 5X Viral Referrals',
+      reward: 'Up to 5X Rewards',
+      desc: 'Get Up to 5x Rewards On Refer if you share app in next two hours! Single refer unlocks massive bonus credits.',
       badgeClass: 'badge-gold',
     },
     {
@@ -157,8 +157,8 @@ const Landing = () => {
       a: 'Yes, 100% free! Major brands and YouTube creators partner with FAR to gain authentic views, subscriptions, and engagement. They pay FAR for your real attention, and we return the majority of those earnings directly to you as genuine mobile talktime and data recharges.',
     },
     {
-      q: 'How does the 2-Hour 4X Multiplier Challenge work?',
-      a: 'When you create an account, you receive 25 Free Welcome Credits instantly, and a 2-hour countdown starts on your dashboard. If you refer just 2 friends before the timer runs out, your welcome bonus multiplies 4X into 100 Credits immediately!',
+      q: 'How does the 2-Hour Referral Multiplier Challenge work?',
+      a: 'When you create an account, you receive 25 Free Welcome Credits instantly, and a 2-hour countdown starts on your dashboard. Get Up to 5x Rewards On Refer if you share app in next two hours — a single refer unlocks massive bonus rewards immediately!',
     },
     {
       q: 'How quickly is the recharge delivered to my phone?',
@@ -175,50 +175,27 @@ const Landing = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '80px', paddingTop: '10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '80px', paddingTop: '10px', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
       {/* =========================================================================
           1. HERO SECTION
           ========================================================================= */}
       <section
+        className="hero-section"
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
           padding: '50px 20px 0 20px',
           width: '100%',
+          boxSizing: 'border-box',
         }}
       >
         <div className="hero-grid">
           {/* Left Column (65% Width): Headline & Action */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0, maxWidth: '100%' }}>
             {/* Brand Eyebrow Badge: Forget About Recharge with standout F, A, R characters */}
-            <div
-              style={{
-                marginTop: '16px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '12px',
-                background: 'linear-gradient(135deg, rgba(7, 15, 33, 0.94) 0%, rgba(13, 27, 62, 0.9) 100%)',
-                border: '1.5px solid rgba(0, 238, 253, 0.65)',
-                borderRadius: '30px',
-                padding: '8px 22px',
-                width: 'fit-content',
-                boxShadow: '0 0 30px rgba(0, 238, 253, 0.4), 0 0 60px rgba(0, 102, 255, 0.25), inset 0 0 15px rgba(0, 238, 253, 0.18)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-              }}
-            >
-              <Zap size={20} color="#fde502" style={{ filter: 'drop-shadow(0 0 10px #fde502)' }} />
-              <div
-                style={{
-                  fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)',
-                  fontWeight: 800,
-                  letterSpacing: '1px',
-                  display: 'inline-flex',
-                  alignItems: 'baseline',
-                  gap: '8px',
-                  textTransform: 'uppercase',
-                }}
-              >
+            <div className="hero-eyebrow-badge">
+              <Zap size={20} color="#fde502" style={{ filter: 'drop-shadow(0 0 10px #fde502)', flexShrink: 0 }} />
+              <div className="hero-eyebrow-text">
                 <span>
                   <strong
                     style={{
@@ -290,32 +267,28 @@ const Landing = () => {
                   maxWidth: '620px',
                 }}
               >
-                Complete fun micro-tasks, subscribe to verified YouTube channels, and invite friends with our 4X multiplier. Redeem 100% free high-speed 5G data &amp; talktime for <strong>Jio, Airtel, Vi, and BSNL</strong>.
+                Complete fun micro-tasks, subscribe to verified YouTube channels, and invite friends for up to 5X rewards. Redeem 100% free high-speed 5G data &amp; talktime for <strong>Jio, Airtel, Vi, and BSNL</strong>.
               </p>
             </div>
 
             {/* CTAs */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+            <div className="hero-cta-group" style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
               <Link
                 to="/register"
-                className="btn btn-lightning pulse-lightning"
+                className="btn btn-lightning pulse-lightning hero-cta-btn"
                 style={{
-                  padding: '14px 30px',
-                  fontSize: '1.05rem',
                   borderRadius: '12px',
                 }}
               >
-                <Zap size={20} fill="#070b14" />
-                Claim 25 Free Welcome Credits
-                <ArrowRight size={18} />
+                <Zap size={20} fill="#070b14" style={{ flexShrink: 0 }} />
+                <span>Claim 25 Free Welcome Credits</span>
+                <ArrowRight size={18} style={{ flexShrink: 0 }} />
               </Link>
 
               <a
                 href="#how-it-works"
-                className="btn btn-secondary"
+                className="btn btn-secondary hero-cta-btn"
                 style={{
-                  padding: '14px 24px',
-                  fontSize: '0.98rem',
                   borderRadius: '12px',
                 }}
               >
@@ -325,37 +298,41 @@ const Landing = () => {
 
             {/* Micro Trust Points */}
             <div
+              className="hero-trust-points"
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: '20px',
+                gap: '12px 18px',
                 paddingTop: '8px',
                 color: 'var(--text-sub)',
                 fontSize: '0.85rem',
+                maxWidth: '100%',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={16} color="#00e699" />
+                <CheckCircle2 size={16} color="#00e699" style={{ flexShrink: 0 }} />
                 <span>100% Free Forever</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={16} color="#00e699" />
+                <CheckCircle2 size={16} color="#00e699" style={{ flexShrink: 0 }} />
                 <span>No Bank Details Needed</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={16} color="#00e699" />
+                <CheckCircle2 size={16} color="#00e699" style={{ flexShrink: 0 }} />
                 <span>Instant Operator Delivery</span>
               </div>
             </div>
 
             {/* Supported Networks Trust Strip with Operator Logos */}
             <div
+              className="hero-telecom-strip"
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
+                gap: '10px',
                 flexWrap: 'wrap',
                 paddingTop: '6px',
+                maxWidth: '100%',
               }}
             >
               <span style={{ fontSize: '0.8rem', color: 'var(--text-sub)', fontWeight: 600 }}>
@@ -546,7 +523,7 @@ const Landing = () => {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Flame size={16} color="#fda702" />
-                    <span style={{ fontSize: '0.78rem', color: '#fff' }}>Invite 2 Friends (4X)</span>
+                    <span style={{ fontSize: '0.78rem', color: '#fff' }}>Single Refer (Up to 5X)</span>
                   </div>
                   <span className="badge badge-gold" style={{ fontSize: '0.7rem' }}>
                     +100 CR
@@ -610,7 +587,7 @@ const Landing = () => {
           }}
         >
           {/* Live Recent Feed */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '280px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: '1 1 260px' }}>
             <div
               style={{
                 width: '10px',
@@ -662,7 +639,7 @@ const Landing = () => {
       </section>
 
       {/* =========================================================================
-          3. THE 2-HOUR 4X MULTIPLIER CHALLENGE (VIRAL ENGINE)
+          3. THE 2-HOUR UP TO 5X REFERRAL CHALLENGE (VIRAL ENGINE)
           ========================================================================= */}
       <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', width: '100%' }}>
         <div
@@ -700,7 +677,7 @@ const Landing = () => {
           </div>
 
           <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', maxWidth: '750px' }}>
-            The 2-Hour 4X Multiplier Challenge
+            Get Up to 5x Rewards On Refer
           </h2>
 
           <p
@@ -711,7 +688,7 @@ const Landing = () => {
               lineHeight: '1.7',
             }}
           >
-            Sign up today and get <strong>25 Free Credits</strong> instantly in your wallet. A 2-hour timer begins immediately. Simply invite <strong>2 friends</strong> before time runs out, and your welcome bonus automatically quadruples to <strong>100 Credits!</strong>
+            Sign up today and get <strong>25 Free Credits</strong> instantly in your wallet. A 2-hour timer begins immediately. Get Up to 5x Rewards On Refer if you share app in next two hours — just <strong>1 single refer</strong> unlocks massive bonus credits!
           </p>
 
           {/* Interactive Visual Progress Bar Demo */}
@@ -735,7 +712,7 @@ const Landing = () => {
               }}
             >
               <span style={{ color: '#fff', fontWeight: 700 }}>
-                Challenge Progress: <span style={{ color: '#fda702' }}>1 / 2 Friends Joined</span>
+                Challenge Progress: <span style={{ color: '#fda702' }}>Single Refer to Unlock</span>
               </span>
               <span style={{ color: '#00eefd', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Clock size={14} /> 1h 42m left
@@ -771,7 +748,7 @@ const Landing = () => {
               }}
             >
               <span>Started: 25 CR</span>
-              <span style={{ color: '#00e699', fontWeight: 700 }}>Target: 100 CR (4x Multiplier)</span>
+              <span style={{ color: '#00e699', fontWeight: 700 }}>Target: Unlock Up to 5X Rewards</span>
             </div>
           </div>
 
@@ -906,13 +883,13 @@ const Landing = () => {
 
                 <button
                   type="button"
-                  onClick={() => setCalcPlan('booster')}
+                  onClick={() => setCalcPlan('annual')}
                   style={{
                     padding: '12px 16px',
                     borderRadius: '12px',
                     textAlign: 'left',
-                    background: calcPlan === 'booster' ? 'rgba(0, 102, 255, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                    border: calcPlan === 'booster' ? '1px solid #00eefd' : '1px solid var(--border-glass)',
+                    background: calcPlan === 'annual' ? 'rgba(0, 102, 255, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                    border: calcPlan === 'annual' ? '1px solid #00eefd' : '1px solid var(--border-glass)',
                     color: '#fff',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -920,10 +897,10 @@ const Landing = () => {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.92rem' }}>Daily Data Add-on Booster</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>1GB - 2GB emergency booster data daily</div>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem' }}>Annual 365-Day Hero Pack</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>2.5GB/day + 365 Days Unlimited Calls</div>
                   </div>
-                  <span style={{ fontWeight: 800, color: '#00eefd' }}>₹{planRates[calcOperator].booster}/day</span>
+                  <span style={{ fontWeight: 800, color: '#00eefd' }}>₹{planRates[calcOperator].annual}/yr</span>
                 </button>
               </div>
             </div>
@@ -1153,9 +1130,9 @@ const Landing = () => {
             >
               2
             </div>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>Complete Tasks &amp; 4X</h3>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>Complete Tasks &amp; Share App</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-              Subscribe to YouTube partner channels, watch 30s videos, or invite 2 friends in 2 hours to 4X your wallet!
+              Subscribe to YouTube partner channels, watch 30s videos, or share the app in your first 2 hours to unlock up to 5X rewards!
             </p>
           </div>
 
@@ -1253,14 +1230,14 @@ const Landing = () => {
           {[
             {
               quote:
-                'I am a college student and honestly haven’t spent money on my Jio 5G plan since using FAR. Doing 2 micro-tasks a day completely covers my ₹299 monthly pack!',
+                'I am a college student and honestly haven’t spent money on my Jio 5G plan since using FAR. Doing 2 micro-tasks a day completely covers my ₹349 monthly pack!',
               name: 'Karan Sharma',
               role: 'Engineering Student, Delhi',
               operator: 'Jio 5G',
             },
             {
               quote:
-                'The 2-Hour 4X referral challenge was super exciting. I shared my invite link in our college WhatsApp group, 2 friends joined within 30 minutes, and boom — 100 Credits unlocked!',
+                'The 2-Hour referral challenge was super exciting. I shared my invite link in our college WhatsApp group, a friend joined, and boom — unlocked massive bonus credits!',
               name: 'Divya Nair',
               role: 'Graphic Designer, Bangalore',
               operator: 'Airtel',
@@ -1439,7 +1416,7 @@ const Landing = () => {
           >
             <span>Are you a YouTuber, Website Owner, or App Developer?</span>
             <Link
-              to="/partners"
+              to="/advertisers"
               style={{
                 color: 'var(--accent)',
                 fontWeight: 700,
@@ -1449,7 +1426,7 @@ const Landing = () => {
                 textDecoration: 'none',
               }}
             >
-              Partner with FAR &amp; Grow with 100% Real Users →
+              📢 Advertise &amp; Sponsor on FAR — Reach 100% Real Users →
             </Link>
           </div>
         </div>

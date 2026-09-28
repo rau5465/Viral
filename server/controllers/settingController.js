@@ -5,6 +5,8 @@ const {
   updateCreditRate,
   getMaintenanceMode,
   updateMaintenanceMode,
+  getReferralSettings,
+  updateReferralSettings,
   clearPlatformCache,
 } = require('../services/settingService');
 
@@ -73,6 +75,40 @@ exports.updateMaintenanceMode = asyncHandler(async (req, res, next) => {
   });
 });
 
+// ─── Referral Settings ────────────────────────────────────────────────────────
+
+// Public: Get current referral reward rates
+exports.getReferralSettings = asyncHandler(async (req, res) => {
+  const settings = await getReferralSettings();
+  res.status(200).json({
+    status: 'success',
+    referral_settings: settings,
+  });
+});
+
+// Admin: Update referral reward rates & 2-hour single refer rules
+exports.updateReferralSettings = asyncHandler(async (req, res, next) => {
+  const { bonus_reward_2h, standard_reward, target_referrals, bonus_window_hours } = req.body;
+
+  if (bonus_reward_2h === undefined && standard_reward === undefined && target_referrals === undefined) {
+    return next(new AppError('Please provide at least one referral setting field to update.', 400));
+  }
+
+  const updated = await updateReferralSettings({
+    bonus_reward_2h: bonus_reward_2h !== undefined ? Number(bonus_reward_2h) : undefined,
+    standard_reward: standard_reward !== undefined ? Number(standard_reward) : undefined,
+    target_referrals: target_referrals !== undefined ? Number(target_referrals) : undefined,
+    bonus_window_hours: bonus_window_hours !== undefined ? Number(bonus_window_hours) : undefined,
+    adminName: req.user?.full_name || 'Admin',
+  });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Referral reward settings updated successfully!',
+    referral_settings: updated,
+  });
+});
+
 // ─── Clear Cache ──────────────────────────────────────────────────────────────
 
 // Admin: Clear platform cache
@@ -82,5 +118,20 @@ exports.clearCache = asyncHandler(async (req, res) => {
     status: 'success',
     message: `Platform cache cleared. ${count} cache key(s) removed.`,
     cleared_at: new Date().toISOString(),
+  });
+});
+
+// Public: Get active announcements for ticker and banners
+exports.getPublicAnnouncements = asyncHandler(async (req, res) => {
+  let announcements = [];
+  try {
+    const { getActiveAnnouncements } = require('../services/announcementService');
+    announcements = await getActiveAnnouncements();
+  } catch (err) {
+    console.warn('Could not fetch active announcements:', err.message);
+  }
+  res.status(200).json({
+    status: 'success',
+    announcements: announcements || [],
   });
 });

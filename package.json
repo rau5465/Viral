@@ -1,12 +1,14 @@
 {
-  "name": "viral-recharge",
+  "name": "far-recharge",
   "version": "1.0.0",
-  "description": "Viral referral-based platform where users earn credits through tasks and redeem for free mobile recharges",
+  "description": "FAR (Forget About Recharge) — Referral-based platform where users earn credits through tasks and redeem for free mobile recharges",
   "scripts": {
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
     "db:init": "npm --prefix server run db:init",
     "build": "npm --prefix client run build",
+    "wacli:auth": ".\\bin\\wacli.exe auth",
+    "wacli:sync": ".\\bin\\wacli.exe sync --follow --webhook http://localhost:5000/api/auth/wacli/webhook --webhook-allow-private",
     "lint": "npm --prefix server run lint && npm --prefix client run lint",
     "install:all": "npm install --prefix server && npm install --prefix client"
   },
@@ -19,6 +21,6 @@
     "mysql",
     "sequelize"
   ],
-  "author": "ViralRecharge Team",
+  "author": "FAR Team",
   "license": "ISC"
 }

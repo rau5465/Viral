@@ -53,21 +53,21 @@ const ReferralCenter = () => {
 
   const handleWhatsApp = () => {
     const text = encodeURIComponent(
-      `🔥 Get 100% FREE Mobile Recharges with ViralRecharge! Sign up using my referral link for instant free credits: ${referralLink}`
+      `🔥 Get 100% FREE Mobile Recharges with FAR (Forget About Recharge)! Sign up using my referral link for instant free credits: ${referralLink}`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
   const handleTelegram = () => {
     const text = encodeURIComponent(
-      `🔥 Claim free mobile recharges! Join ViralRecharge here: ${referralLink}`
+      `🔥 Claim free mobile recharges! Join FAR (Forget About Recharge) here: ${referralLink}`
     );
     window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${text}`, '_blank');
   };
 
   const handleTwitter = () => {
     const text = encodeURIComponent(
-      `Get FREE mobile talktime & data recharges on Jio, Airtel, Vi with ViralRecharge! 🚀 ${referralLink}`
+      `Get FREE mobile talktime & data recharges on Jio, Airtel, Vi with FAR (Forget About Recharge)! 🚀 ${referralLink}`
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };
@@ -96,10 +96,10 @@ const ReferralCenter = () => {
       {/* Header */}
       <div>
         <h1 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Users size={28} color="var(--accent)" /> Invite &amp; Referral Program (5X Bonus)
+          <Users size={28} color="var(--accent)" /> Invite &amp; Referral Program
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          Earn 50 Credits/User during your first 2 hours (5X Boost)! Standard reward: 10 Credits (₹10)/User.
+          Get Up to 5x Rewards On Refer if you share app in next two hours! Single refer unlocks massive bonus credits.
         </p>
       </div>
 
@@ -114,7 +114,7 @@ const ReferralCenter = () => {
       <div className="glass-card" style={{ padding: '28px' }}>
         <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Your Exclusive Referral Link</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '18px' }}>
-          Share your personal link. Earn 50 Credits for each friend who registers in your first 2 hours (10 Credits thereafter)!
+          Share your personal link. Get Up to 5x Rewards on Refer if you share app in next two hours!
         </p>
 
         {/* Link Bar */}

@@ -59,7 +59,7 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
   const handleWhatsAppShare = () => {
     const link = referralLink || `${window.location.origin}/register?ref=${referralCode || ''}`;
     const text = encodeURIComponent(
-      `🔥 Get FREE Mobile Recharges with ViralRecharge! Sign up using my referral link to get instant bonus credits: ${link}`
+      `🔥 Get FREE Mobile Recharges with FAR (Forget About Recharge)! Sign up using my referral link to get instant bonus credits: ${link}`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
@@ -97,9 +97,9 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
               <CheckCircle2 size={24} color="#00b894" />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.1rem', color: '#00b894' }}>5x Viral Bonus Unlocked! 🎉</h3>
+              <h3 style={{ fontSize: '1.1rem', color: '#00b894' }}>Up to 5x Referral Rewards Unlocked! 🎉</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                You earned 50 credits/user 5X bonus for referrals within your first 2 hours!
+                You earned bonus rewards for referring friends within your first 2 hours!
               </p>
             </div>
           </div>
@@ -127,9 +127,9 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Clock size={20} color="var(--text-muted)" />
           <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>2-Hour 5x Bonus Window Ended</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>2-Hour Referral Bonus Window Ended</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Don&apos;t worry! You still earn 10 credits (₹10) for every single friend you refer!
+              Don&apos;t worry! You still earn {bonus?.bonusRateStandard || 10} Credits (₹10) for every friend you refer!
             </div>
           </div>
         </div>
@@ -171,11 +171,11 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h3 style={{ fontSize: '1.2rem', color: '#ff7675' }}>5x Viral Referral Bonus!</h3>
+              <h3 style={{ fontSize: '1.2rem', color: '#ff7675' }}>Get Up to 5x Rewards On Refer!</h3>
               <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>2-Hour Window</span>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '2px' }}>
-              Earn <strong>50 Credits/User (5X Boost)</strong> within your first 2 hours! After that, standard reward is 10 Credits (₹10)/User.
+              Get Up to 5x Rewards On Refer if you share app in next two hours! Single refer unlocks massive bonus credits.
             </p>
           </div>
         </div>
@@ -207,10 +207,10 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Users size={16} color="var(--accent)" />
-            Referrals: <strong>{bonus.referralCount || 0} / {bonus.target || 2}</strong>
+            Referrals: <strong>{bonus.referralCount || 0} / {bonus.target || 1}</strong>
           </span>
           <span style={{ color: 'var(--warning)', fontWeight: 700 }}>
-            {bonus.referralCount >= (bonus.target || 2) ? 'Target Reached!' : `${(bonus.target || 2) - (bonus.referralCount || 0)} More Needed`}
+            {bonus.referralCount >= (bonus.target || 1) ? 'Target Reached!' : `${(bonus.target || 1) - (bonus.referralCount || 0)} More Needed`}
           </span>
         </div>
         <div

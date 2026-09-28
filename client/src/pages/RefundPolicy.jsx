@@ -67,7 +67,7 @@ const RefundPolicy = () => {
             <span style={{ color: 'var(--accent)' }}>1.</span> The Zero-Cost Reward Model
           </h2>
           <p>
-            On <strong>FAR (Forget About Recharge)</strong>, users never spend real money out of pocket to purchase recharges. All mobile recharges (Jio, Airtel, Vi, and BSNL) are funded entirely by redeeming FAR Credits earned through sponsored creator engagements, YouTube subscriptions, and the 2-Hour 4X Referral Challenge.
+            On <strong>FAR (Forget About Recharge)</strong>, users never spend real money out of pocket to purchase recharges. All mobile recharges (Jio, Airtel, Vi, and BSNL) are funded entirely by redeeming FAR Credits earned through sponsored creator engagements, YouTube subscriptions, and the 2-Hour Referral Challenge.
           </p>
           <p style={{ marginTop: '10px' }}>
             Consequently, this policy defines how your <strong>earned Credits and telecom operator deliveries</strong> are safeguarded, refunded, or reversed in the event of technical failure.

@@ -22,7 +22,7 @@ const startServer = async () => {
 
     const server = app.listen(PORT, () => {
       console.log(`===============================================`);
-      console.log(`🚀 ViralRecharge Server running on port ${PORT}`);
+      console.log(`🚀 FAR (Forget About Recharge) Server running on port ${PORT}`);
       console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
       console.log(`===============================================`);

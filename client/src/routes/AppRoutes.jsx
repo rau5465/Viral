@@ -51,10 +51,24 @@ const AdminRoute = ({ children }) => {
   return children;
 };
 
+const UserRoute = ({ children }) => {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+        <div className="spinner" style={{ margin: '0 auto' }} />
+      </div>
+    );
+  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (isAdmin) return <Navigate to="/admin" replace />;
+  return children;
+};
+
 const PublicOnlyRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading } = useAuth();
   if (loading) return null;
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+  return isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : children;
 };
 
 const AppRoutes = () => {
@@ -66,6 +80,10 @@ const AppRoutes = () => {
       <Route path="/partners" element={<Partners />} />
       <Route path="/partner" element={<Partners />} />
       <Route path="/advertise" element={<Partners />} />
+      <Route path="/advertisers" element={<Partners />} />
+      <Route path="/advertiser" element={<Partners />} />
+      <Route path="/sponsors" element={<Partners />} />
+      <Route path="/sponsor" element={<Partners />} />
       <Route path="/creators" element={<Partners />} />
       <Route path="/about" element={<About />} />
       <Route path="/about-us" element={<About />} />
@@ -109,33 +127,33 @@ const AppRoutes = () => {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <UserRoute>
             <Dashboard />
-          </ProtectedRoute>
+          </UserRoute>
         }
       />
       <Route
         path="/tasks"
         element={
-          <ProtectedRoute>
+          <UserRoute>
             <Tasks />
-          </ProtectedRoute>
+          </UserRoute>
         }
       />
       <Route
         path="/referrals"
         element={
-          <ProtectedRoute>
+          <UserRoute>
             <ReferralCenter />
-          </ProtectedRoute>
+          </UserRoute>
         }
       />
       <Route
         path="/recharge"
         element={
-          <ProtectedRoute>
+          <UserRoute>
             <RechargeRedeem />
-          </ProtectedRoute>
+          </UserRoute>
         }
       />
       <Route
@@ -157,25 +175,25 @@ const AppRoutes = () => {
       <Route
         path="/multiply"
         element={
-          <ProtectedRoute>
+          <UserRoute>
             <MultiplyGame />
-          </ProtectedRoute>
+          </UserRoute>
         }
       />
       <Route
         path="/game"
         element={
-          <ProtectedRoute>
+          <UserRoute>
             <MultiplyGame />
-          </ProtectedRoute>
+          </UserRoute>
         }
       />
       <Route
         path="/multiply-credits"
         element={
-          <ProtectedRoute>
+          <UserRoute>
             <MultiplyGame />
-          </ProtectedRoute>
+          </UserRoute>
         }
       />
 

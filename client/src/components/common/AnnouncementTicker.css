@@ -1,9 +1,8 @@
 /* AnnouncementTicker — scrolling notice bar below the header */
 
 .announcement-ticker {
-  position: sticky;
-  top: 0;
-  z-index: 999;
+  position: relative;
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 0;

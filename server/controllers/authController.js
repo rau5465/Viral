@@ -11,9 +11,9 @@ const inMemoryUsers = [
     id: 1,
     full_name: 'FAR Admin',
     mobile: '9999999999',
-    email: 'admin@viralrecharge.com',
+    email: 'admin@far.com',
     password_hash: bcrypt.hashSync('Admin@123', 10),
-    referral_code: 'VRADMIN',
+    referral_code: 'FARADMIN',
     credit_balance: 5000,
     total_earned: 5000,
     role: 'admin',
@@ -47,9 +47,9 @@ const inMemoryUsers = [
   },
 ];
 
-// Register New User (WhatsApp Mobile Number - No OTP, No Email required)
+// Register New User (WhatsApp Mobile Number with One Device One Account enforcement)
 const register = asyncHandler(async (req, res, next) => {
-  const { full_name, mobile, password, referral_code } = req.body;
+  const { full_name, mobile, password, referral_code, device_fingerprint } = req.body;
 
   if (!full_name || !mobile || !password) {
     return next(new AppError('Please provide your full name, WhatsApp mobile number and password.', 400));
@@ -60,6 +60,21 @@ const register = asyncHandler(async (req, res, next) => {
   if (cleanMobile.length !== 10) {
     return next(new AppError('Please enter a valid 10-digit WhatsApp mobile number.', 400));
   }
+
+  // Extract IP and build deterministic fallback device signature
+  const crypto = require('crypto');
+  const clientFingerprint = (device_fingerprint || '').trim();
+  const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '127.0.0.1';
+  const cleanIp = String(rawIp).split(',')[0].trim().replace('::ffff:', '');
+  const userAgent = req.headers['user-agent'] || '';
+
+  const fallbackDeviceHash = crypto
+    .createHash('sha256')
+    .update(`${userAgent}::${cleanIp}`)
+    .digest('hex');
+
+  const finalDeviceFingerprint =
+    clientFingerprint && clientFingerprint.length >= 32 ? clientFingerprint : fallbackDeviceHash;
 
   // Check if mobile exists
   let existingUser = null;
@@ -74,6 +89,43 @@ const register = asyncHandler(async (req, res, next) => {
 
   if (existingUser) {
     return next(new AppError('An account with this WhatsApp mobile number already exists. Please sign in.', 400));
+  }
+
+  // One Device, One Account Policy: Check for existing account on this device/browser
+  if (finalDeviceFingerprint) {
+    let existingDeviceUser = null;
+    try {
+      existingDeviceUser = await User.findOne({
+        where: { device_fingerprint: finalDeviceFingerprint },
+      });
+    } catch (err) {
+      console.warn('Device fingerprint database check error:', err.message);
+      existingDeviceUser = inMemoryUsers.find((u) => u.device_fingerprint === finalDeviceFingerprint);
+    }
+
+    if (existingDeviceUser) {
+      return next(
+        new AppError(
+          'One Device, One Account Policy: Do not try to create more than one account to avoid account ban. Only one account must be used in a single device. Please sign in to your existing account.',
+          400
+        )
+      );
+    }
+  }
+
+  // WhatsApp wacli Verification check
+  const wacliService = require('../services/wacliService');
+  const wacliSettings = await wacliService.getSettings();
+  if (wacliSettings.enabled) {
+    const isVerified = await wacliService.isMobileVerified(cleanMobile);
+    if (!isVerified) {
+      return next(
+        new AppError(
+          'Please verify your WhatsApp mobile number before registering. Click "Verify with WhatsApp" to confirm your number.',
+          400
+        )
+      );
+    }
   }
 
   // Validate referrer if referral code provided
@@ -113,6 +165,8 @@ const register = asyncHandler(async (req, res, next) => {
           total_earned: signupBonus,
           bonus_deadline: bonusDeadline,
           role: 'user',
+          device_fingerprint: finalDeviceFingerprint,
+          signup_ip: cleanIp.slice(0, 45),
         },
         { transaction: t }
       );
@@ -162,6 +216,8 @@ const register = asyncHandler(async (req, res, next) => {
       total_earned: signupBonus,
       bonus_deadline: bonusDeadline,
       role: 'user',
+      device_fingerprint: finalDeviceFingerprint,
+      signup_ip: cleanIp.slice(0, 45),
       is_banned: false,
       comparePassword: async function (pass) {
         return bcrypt.compare(pass, this.password_hash);
@@ -191,6 +247,9 @@ const register = asyncHandler(async (req, res, next) => {
     // Non-blocking in degraded mode
   }
 
+  // Mark phone verification as used
+  await wacliService.markVerificationUsed(cleanMobile);
+
   res.status(201).json({
     status: 'success',
     message: 'Account created successfully! 25 bonus credits added.',
@@ -214,18 +273,29 @@ const login = asyncHandler(async (req, res, next) => {
     return next(new AppError('Please provide your WhatsApp mobile number and password.', 400));
   }
 
-  // Normalize 10-digit mobile
+  // Normalize 10-digit mobile and detect demo aliases
   const cleanMobile = loginInput.replace(/[^0-9]/g, '').slice(-10);
+  const lowerInput = loginInput.toLowerCase();
+  const isAdminAlias = lowerInput === 'admin' || lowerInput === 'administrator';
+  const isDemoAlias = lowerInput === 'demo' || lowerInput === 'demouser';
 
   let user = null;
   try {
+    const whereConditions = [
+      { mobile: cleanMobile.length === 10 ? cleanMobile : loginInput },
+      { mobile: loginInput },
+      { email: loginInput },
+    ];
+    if (isAdminAlias) {
+      whereConditions.push({ mobile: '9999999999' }, { role: 'admin' });
+    }
+    if (isDemoAlias) {
+      whereConditions.push({ mobile: '9876543210' });
+    }
+
     user = await User.findOne({
       where: {
-        [sequelize.Sequelize.Op.or]: [
-          { mobile: cleanMobile.length === 10 ? cleanMobile : loginInput },
-          { mobile: loginInput },
-          { email: loginInput },
-        ],
+        [sequelize.Sequelize.Op.or]: whereConditions,
       },
     });
   } catch (dbErr) {
@@ -237,7 +307,9 @@ const login = asyncHandler(async (req, res, next) => {
       (u) =>
         u.mobile === cleanMobile ||
         u.mobile === loginInput ||
-        u.email === loginInput
+        u.email === loginInput ||
+        (isAdminAlias && (u.mobile === '9999999999' || u.role === 'admin')) ||
+        (isDemoAlias && u.mobile === '9876543210')
     );
   }
 
@@ -388,93 +460,147 @@ const logout = asyncHandler(async (req, res, _next) => {
   });
 });
 
-// Forgot Password Request
-const forgotPassword = asyncHandler(async (req, res, next) => {
-  const { identifier } = req.body;
+// Get Security Questions for Forgot Password
+const getSecurityQuestionsByMobile = asyncHandler(async (req, res, next) => {
+  const identifier = req.body.mobile || req.body.identifier;
 
   if (!identifier) {
-    return next(new AppError('Please provide your registered email or mobile number.', 400));
+    return next(new AppError('Please provide your 10-digit WhatsApp mobile number.', 400));
   }
 
-  const user = await User.findOne({
-    where: {
-      [sequelize.Sequelize.Op.or]: [{ email: identifier }, { mobile: identifier }],
-    },
-  });
+  const cleanMobile = String(identifier).replace(/[^0-9]/g, '').slice(-10);
+
+  let user = null;
+  try {
+    user = await User.findOne({
+      where: {
+        [sequelize.Sequelize.Op.or]: [{ mobile: cleanMobile }, { email: identifier }],
+      },
+    });
+  } catch (err) {
+    console.warn('DB lookup failed in getSecurityQuestionsByMobile:', err.message);
+    user = inMemoryUsers.find((u) => u.mobile === cleanMobile);
+  }
 
   if (!user) {
-    // Return generic message for privacy
-    return res.status(200).json({
-      status: 'success',
-      message: 'If the account exists, an OTP has been sent.',
-    });
+    return next(new AppError('No account found with this WhatsApp mobile number.', 404));
   }
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  // Check if password reset is locked out until tomorrow
+  if (user.reset_locked_until && new Date() < new Date(user.reset_locked_until)) {
+    const diffMs = new Date(user.reset_locked_until).getTime() - Date.now();
+    const hours = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+    return next(
+      new AppError(
+        `Password reset is locked due to incorrect security answers. Please try again tomorrow (in approximately ${hours} hour${hours > 1 ? 's' : ''}).`,
+        403
+      )
+    );
+  }
 
-  await OtpCode.create({
-    user_id: user.id,
-    mobile: user.mobile,
-    code,
-    purpose: 'password_reset',
-    expires_at: expiresAt,
-  });
+  if (!user.security_questions_set || !user.security_q1 || !user.security_q2) {
+    return next(
+      new AppError(
+        'Security questions have not been set for this account yet. Please contact FAR support for account verification.',
+        400
+      )
+    );
+  }
 
   res.status(200).json({
     status: 'success',
-    message: 'Password reset OTP has been sent.',
-    ...(process.env.NODE_ENV === 'development' && { demoOtp: code }),
+    message: 'Security questions retrieved.',
+    q1: user.security_q1,
+    q2: user.security_q2,
   });
 });
 
-// Reset Password
+// Reset Password with 2 Security Questions
 const resetPassword = asyncHandler(async (req, res, next) => {
-  const { identifier, code, newPassword } = req.body;
+  const identifier = req.body.mobile || req.body.identifier;
+  const { a1, a2, newPassword } = req.body;
 
-  if (!identifier || !code || !newPassword) {
-    return next(new AppError('Please provide identifier, OTP code, and new password.', 400));
+  if (!identifier || !a1 || !a2 || !newPassword) {
+    return next(new AppError('Please answer both security questions and enter a new password.', 400));
   }
 
-  const user = await User.findOne({
-    where: {
-      [sequelize.Sequelize.Op.or]: [{ email: identifier }, { mobile: identifier }],
-    },
-  });
+  if (newPassword.length < 6) {
+    return next(new AppError('New password must be at least 6 characters long.', 400));
+  }
+
+  const cleanMobile = String(identifier).replace(/[^0-9]/g, '').slice(-10);
+
+  let user = null;
+  try {
+    user = await User.findOne({
+      where: {
+        [sequelize.Sequelize.Op.or]: [{ mobile: cleanMobile }, { email: identifier }],
+      },
+    });
+  } catch (err) {
+    console.warn('DB lookup failed in resetPassword:', err.message);
+    user = inMemoryUsers.find((u) => u.mobile === cleanMobile);
+  }
 
   if (!user) {
     return next(new AppError('User not found.', 404));
   }
 
-  const otpRecord = await OtpCode.findOne({
-    where: {
-      mobile: user.mobile,
-      code,
-      purpose: 'password_reset',
-      is_used: false,
-      expires_at: {
-        [sequelize.Sequelize.Op.gt]: new Date(),
-      },
-    },
-  });
-
-  if (!otpRecord) {
-    return next(new AppError('Invalid or expired OTP code.', 400));
+  // Check lockout
+  if (user.reset_locked_until && new Date() < new Date(user.reset_locked_until)) {
+    const diffMs = new Date(user.reset_locked_until).getTime() - Date.now();
+    const hours = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+    return next(
+      new AppError(
+        `Password reset is locked due to incorrect security answers. You can try again tomorrow (in ~${hours} hour${hours > 1 ? 's' : ''}).`,
+        403
+      )
+    );
   }
 
-  otpRecord.is_used = true;
-  await otpRecord.save();
+  if (!user.security_questions_set || !user.security_a1 || !user.security_a2) {
+    return next(new AppError('No security questions are configured for this account. Contact support.', 400));
+  }
 
-  const salt = await bcrypt.genSalt(10);
-  user.password_hash = await bcrypt.hash(newPassword, salt);
-  await user.save();
+  const cleanA1 = String(a1).trim().toLowerCase();
+  const cleanA2 = String(a2).trim().toLowerCase();
 
-  // Invalidate previous sessions
-  await Session.destroy({ where: { user_id: user.id } });
+  const isA1Valid = await bcrypt.compare(cleanA1, user.security_a1);
+  const isA2Valid = await bcrypt.compare(cleanA2, user.security_a2);
+
+  if (!isA1Valid || !isA2Valid) {
+    // Lock out password reset until the next day (24 hours)
+    const lockoutDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    try {
+      user.reset_locked_until = lockoutDate;
+      user.reset_attempts_failed = (user.reset_attempts_failed || 0) + 1;
+      await user.save();
+    } catch (saveErr) {
+      console.warn('Failed to save lockout on user:', saveErr.message);
+    }
+    return next(
+      new AppError(
+        'Incorrect security answer(s). As warned, password reset is now locked and you can only try again tomorrow (after 24 hours).',
+        400
+      )
+    );
+  }
+
+  // Both answers match! Update password and clear lockout
+  try {
+    const salt = await bcrypt.genSalt(10);
+    user.password_hash = await bcrypt.hash(newPassword, salt);
+    user.reset_locked_until = null;
+    user.reset_attempts_failed = 0;
+    await user.save();
+    await Session.destroy({ where: { user_id: user.id } });
+  } catch (err) {
+    console.error('Password reset save error:', err);
+  }
 
   res.status(200).json({
     status: 'success',
-    message: 'Password reset successfully. You can now login with your new password.',
+    message: 'Password reset successfully! You can now log in with your new password.',
   });
 });
 
@@ -576,7 +702,8 @@ module.exports = {
   verifyOtp,
   refreshToken,
   logout,
-  forgotPassword,
+  forgotPassword: getSecurityQuestionsByMobile,
+  getSecurityQuestionsByMobile,
   resetPassword,
   googleAuth,
   inMemoryUsers,

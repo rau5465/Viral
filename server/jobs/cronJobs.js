@@ -102,6 +102,16 @@ const initCronJobs = () => {
   // Process recharge queue every 2 minutes
   cron.schedule('*/2 * * * *', rechargeQueueProcessor);
 
+  // Take live user activity snapshot every 2 minutes for charts
+  cron.schedule('*/2 * * * *', async () => {
+    try {
+      const activeUserService = require('../services/activeUserService');
+      await activeUserService.recordSnapshot();
+    } catch (err) {
+      console.error('[Job] Live user snapshot error:', err.message);
+    }
+  });
+
   // Run fraud scanner every 15 minutes
   cron.schedule('*/15 * * * *', fraudDetectionScanner);
 

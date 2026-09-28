@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
   Users,
@@ -24,15 +25,52 @@ import {
   ToggleLeft,
   ToggleRight,
   DatabaseZap,
+  Copy,
+  Terminal,
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
+  Megaphone,
+  History,
+  Activity,
+  Radio,
+  LogOut,
+  Menu,
 } from 'lucide-react';
 import { apiService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/common/Modal';
+import { WhatsAppIcon } from '../../components/common/WhatsAppIcon';
 
 const AdminDashboard = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTabQuery = searchParams.get('tab');
+  const [activeTab, setActiveTabState] = useState(currentTabQuery || 'overview');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const [activeTab, setActiveTab] = useState('overview'); // overview, users, tasks, recharges, contacts, announcements, logs
+  useEffect(() => {
+    if (currentTabQuery && currentTabQuery !== activeTab) {
+      setActiveTabState(currentTabQuery);
+    }
+  }, [currentTabQuery]);
+
+  const setActiveTab = (tabId) => {
+    setActiveTabState(tabId);
+    setSearchParams({ tab: tabId });
+  };
+
+  // Live Users & Chart Analytics State
+  const [liveStats, setLiveStats] = useState({ liveUsers: 0, liveAuthenticated: 0, liveGuests: 0 });
+  const [liveChartRange, setLiveChartRange] = useState('24h');
+  const [liveChartData, setLiveChartData] = useState([]);
+  const [liveChartLoading, setLiveChartLoading] = useState(false);
+
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -90,6 +128,21 @@ const AdminDashboard = () => {
   const [rateCredits, setRateCredits] = useState(1);
   const [rateSaving, setRateSaving] = useState(false);
 
+  // Referral Reward Settings state
+  const [referralSettings, setReferralSettings] = useState({
+    bonus_reward_2h: 50,
+    standard_reward: 10,
+    target_referrals: 1,
+    bonus_window_hours: 2,
+    updated_at: null,
+    updated_by: 'System Administrator',
+  });
+  const [refBonus2h, setRefBonus2h] = useState(50);
+  const [refStandard, setRefStandard] = useState(10);
+  const [refTarget, setRefTarget] = useState(1);
+  const [refWindowHours, setRefWindowHours] = useState(2);
+  const [refSaving, setRefSaving] = useState(false);
+
   // Maintenance Mode state
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState(
@@ -98,10 +151,25 @@ const AdminDashboard = () => {
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
   const [cacheClearLoading, setCacheClearLoading] = useState(false);
 
+  // WhatsApp wacli Verification state
+  const [waSettings, setWaSettings] = useState({
+    enabled: true,
+    whatsapp_number: '919999999999',
+    code_expiry_minutes: 10,
+    webhook_secret: '',
+    auto_reply: false,
+    auto_reply_message: '✅ Your WhatsApp number has been verified for FAR! You can now finish creating your account.',
+    wacli_binary_path: 'wacli',
+  });
+  const [waSaving, setWaSaving] = useState(false);
+  const [simMobile, setSimMobile] = useState('');
+  const [simCode, setSimCode] = useState('');
+  const [simLoading, setSimLoading] = useState(false);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsRes, usersRes, tasksRes, rechargesRes, annRes, logsRes, contactsRes, rateRes, maintenanceRes] = await Promise.all([
+      const [statsRes, usersRes, tasksRes, rechargesRes, annRes, logsRes, contactsRes, rateRes, maintenanceRes, refSettingsRes, waRes] = await Promise.all([
         apiService.getAdminStats(),
         apiService.getAdminUsers(),
         apiService.getAdminTasks(),
@@ -111,9 +179,24 @@ const AdminDashboard = () => {
         apiService.getAdminContacts().catch(() => ({ data: { contacts: [] } })),
         apiService.getCreditRate().catch(() => ({ data: { credit_rate: {} } })),
         apiService.getMaintenanceMode().catch(() => ({ maintenance: { enabled: false } })),
+        apiService.getReferralSettings().catch(() => ({ data: { referral_settings: {} } })),
+        apiService.getWhatsAppVerificationSettings().catch(() => ({ data: { settings: {} } })),
       ]);
 
-      setStats(statsRes.stats);
+      if (waRes.data?.settings) {
+        setWaSettings((prev) => ({ ...prev, ...waRes.data.settings }));
+      }
+
+      if (statsRes.stats) {
+        setStats(statsRes.stats);
+        if (statsRes.stats.liveUsers !== undefined) {
+          setLiveStats({
+            liveUsers: statsRes.stats.liveUsers || 0,
+            liveAuthenticated: statsRes.stats.liveAuthenticated || 0,
+            liveGuests: statsRes.stats.liveGuests || 0,
+          });
+        }
+      }
       setUsers(usersRes.users || []);
       setTasks(tasksRes.tasks || []);
       setRecharges(rechargesRes.recharges || []);
@@ -121,12 +204,21 @@ const AdminDashboard = () => {
       setLogs(logsRes.logs || []);
       setContacts(contactsRes.data?.contacts || contactsRes.contacts || []);
 
-      if (rateRes?.credit_rate) {
-        const cr = rateRes.credit_rate;
+      const cr = rateRes?.credit_rate || rateRes?.data?.credit_rate;
+      if (cr) {
         setCreditRate(cr);
         setRateEditDisplay(cr.credit_rate_display || '1Rs = 1 Credit');
         setRateRupees(cr.rupees || 1);
         setRateCredits(cr.credits || 1);
+      }
+
+      const rs = refSettingsRes?.referral_settings || refSettingsRes?.data?.referral_settings;
+      if (rs) {
+        setReferralSettings(rs);
+        setRefBonus2h(rs.bonus_reward_2h ?? 50);
+        setRefStandard(rs.standard_reward ?? 10);
+        setRefTarget(rs.target_referrals ?? 1);
+        setRefWindowHours(rs.bonus_window_hours ?? 2);
       }
 
       const mnt = maintenanceRes?.maintenance;
@@ -141,6 +233,44 @@ const AdminDashboard = () => {
     }
   };
 
+  // Fetch live user history for the chart
+  const loadLiveChartData = async (range = liveChartRange) => {
+    setLiveChartLoading(true);
+    try {
+      const res = await apiService.getLiveUserAnalytics({ range });
+      if (res.data) {
+        setLiveChartData(res.data.history || []);
+        if (res.data.current) {
+          setLiveStats({
+            liveUsers: res.data.current.totalLive || 0,
+            liveAuthenticated: res.data.current.authenticated || 0,
+            liveGuests: res.data.current.guests || 0,
+          });
+        }
+      }
+    } catch (_err) {
+      // Silent error
+    } finally {
+      setLiveChartLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    loadLiveChartData(liveChartRange);
+
+    // Refresh live stats and chart every 30s while viewing Admin Panel
+    const liveTimer = setInterval(() => {
+      loadLiveChartData(liveChartRange);
+    }, 30000);
+
+    return () => clearInterval(liveTimer);
+  }, []);
+
+  useEffect(() => {
+    loadLiveChartData(liveChartRange);
+  }, [liveChartRange]);
+
   // Update Credit Conversion Rate
   const handleSaveCreditRate = async (e) => {
     if (e) e.preventDefault();
@@ -154,15 +284,81 @@ const AdminDashboard = () => {
         rupees: Number(rateRupees) || 1,
         credits: Number(rateCredits) || 1,
       });
-      if (res.data?.credit_rate) {
-        setCreditRate(res.data.credit_rate);
-        setRateEditDisplay(res.data.credit_rate.credit_rate_display);
+      const cr = res?.credit_rate || res?.data?.credit_rate;
+      if (cr) {
+        setCreditRate(cr);
+        setRateEditDisplay(cr.credit_rate_display);
       }
       toast.success('Credit conversion rate updated successfully!');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update credit rate.');
+      toast.error(err.response?.data?.message || err.message || 'Failed to update credit rate.');
     } finally {
       setRateSaving(false);
+    }
+  };
+
+  // Update Referral Reward Settings (Single Refer in first 2h & After 2h)
+  const handleSaveReferralSettings = async (e) => {
+    if (e) e.preventDefault();
+    setRefSaving(true);
+    try {
+      const res = await apiService.updateReferralSettings({
+        bonus_reward_2h: Number(refBonus2h),
+        standard_reward: Number(refStandard),
+        target_referrals: 1, // Single Refer policy
+        bonus_window_hours: Number(refWindowHours),
+      });
+      const rs = res?.referral_settings || res?.data?.referral_settings;
+      if (rs) {
+        setReferralSettings(rs);
+        setRefBonus2h(rs.bonus_reward_2h ?? 50);
+        setRefStandard(rs.standard_reward ?? 10);
+        setRefWindowHours(rs.bonus_window_hours ?? 2);
+      }
+      toast.success('Referral reward settings updated successfully!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to update referral settings.');
+    } finally {
+      setRefSaving(false);
+    }
+  };
+
+  // Update WhatsApp Verification Settings (wacli)
+  const handleSaveWaSettings = async (e) => {
+    if (e) e.preventDefault();
+    setWaSaving(true);
+    try {
+      const res = await apiService.updateWhatsAppVerificationSettings(waSettings);
+      if (res.data?.settings) {
+        setWaSettings(res.data.settings);
+      }
+      toast.success('WhatsApp verification settings updated successfully!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to update WhatsApp settings.');
+    } finally {
+      setWaSaving(false);
+    }
+  };
+
+  // Simulate WhatsApp verification for testing
+  const handleAdminSimulateVerification = async (e) => {
+    if (e) e.preventDefault();
+    if (!simMobile || !simCode) {
+      return toast.warning('Please enter mobile number and 6-char verification code.');
+    }
+    setSimLoading(true);
+    try {
+      const res = await apiService.simulateWhatsAppVerification(simMobile.trim(), simCode.trim());
+      if (res.result?.verified) {
+        toast.success(`✅ Mobile +91 ${simMobile} verified with code ${simCode}!`);
+        setSimCode('');
+      } else {
+        toast.warning(res.result?.reason || 'Simulation failed');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Simulation error.');
+    } finally {
+      setSimLoading(false);
     }
   };
 
@@ -390,71 +586,397 @@ const AdminDashboard = () => {
     }
   };
 
+  const adminNavItems = [
+    { id: 'overview', label: 'Platform Analytics', icon: <BarChart3 size={18} color="#00eefd" /> },
+    {
+      id: 'live_users',
+      label: 'Live Users Activity',
+      badge: `${liveStats.liveUsers} LIVE`,
+      isLiveBadge: true,
+      icon: <Radio size={18} color="#00e699" />,
+    },
+    { id: 'users', label: 'User Moderation', badge: users.length, icon: <Users size={18} color="#00e699" /> },
+    { id: 'tasks', label: 'Tasks & Ads', badge: tasks.length, icon: <CheckSquare size={18} color="#00d2d3" /> },
+    { id: 'recharges', label: 'Recharge Orders', badge: recharges.length, icon: <Smartphone size={18} color="#fdcb6e" /> },
+    { id: 'contacts', label: 'Sponsors & Inquiries', badge: contacts.length, icon: <Megaphone size={18} color="#ff7675" /> },
+    { id: 'settings', label: 'Rates & Referrals', badge: creditRate.credit_rate_display, icon: <Settings size={18} color="#a29bfe" /> },
+    { id: 'announcements', label: 'Announcements', badge: announcements.length, icon: <Megaphone size={18} color="#fbbf24" /> },
+    { id: 'maintenance', label: 'Maintenance Mode', badge: maintenanceEnabled ? 'ON' : null, icon: <ShieldCheck size={18} color="#fd79a8" /> },
+    { id: 'logs', label: 'Activity Logs', icon: <History size={18} color="#00cec9" /> },
+  ];
+
   if (loading) {
     return (
-      <div className="inner-page-offset" style={{ maxWidth: '1200px', margin: '0 auto', padding: '52px 20px', textAlign: 'center' }}>
-        <div className="spinner" style={{ margin: '40px auto' }} />
+      <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000000', padding: '40px 20px' }}>
+        <div className="spinner" style={{ marginBottom: '16px' }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading Control Panel data...</p>
       </div>
     );
   }
 
   return (
-    <div className="inner-page-offset" style={{ maxWidth: '1200px', margin: '0 auto', padding: '52px 20px 30px 20px' }}>
-      {/* Admin Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ShieldCheck size={28} color="#00d2d3" /> Control Panel & Administration
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-            System overview, user moderation, task management & recharge queue
-          </p>
-        </div>
-      </div>
+    <div className="admin-fullwidth-wrapper">
+      {/* Mobile Backdrop */}
+      {mobileSidebarOpen && (
+        <div
+          className="admin-sidebar-backdrop"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
 
-      {/* Tabs */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          overflowX: 'auto',
-          borderBottom: '1px solid var(--border-glass)',
-          paddingBottom: '10px',
-          marginBottom: '24px',
-        }}
-      >
-        {[
-          { id: 'overview', label: 'Overview' },
-          { id: 'settings', label: `Credit Rate (${creditRate.credit_rate_display})` },
-          { id: 'maintenance', label: `🔧 Maintenance${maintenanceEnabled ? ' (ON)' : ''}` },
-          { id: 'users', label: `Users (${users.length})` },
-          { id: 'tasks', label: `Tasks (${tasks.length})` },
-          { id: 'recharges', label: `Recharges (${recharges.length})` },
-          { id: 'contacts', label: `Inquiries (${contacts.length})` },
-          { id: 'announcements', label: `Announcements (${announcements.length})` },
-          { id: 'logs', label: 'Activity Logs' },
-        ].map((tab) => (
+      {/* Collapsible Left Side Menu */}
+      <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileSidebarOpen ? 'mobile-open' : ''}`}>
+        <div className="admin-sidebar-header">
+          {!sidebarCollapsed ? (
+            <Link
+              to="/admin"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                textDecoration: 'none',
+                minWidth: 0,
+                outline: 'none',
+              }}
+            >
+              <img
+                src="/far-logo-md.png"
+                alt="FAR Logo"
+                style={{
+                  height: '38px',
+                  width: 'auto',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 2px 8px rgba(0, 238, 253, 0.25))',
+                }}
+              />
+              <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <span
+                  style={{
+                    fontSize: '1.05rem',
+                    fontWeight: 900,
+                    color: '#ffffff',
+                    letterSpacing: '0.8px',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  FAR
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.66rem',
+                    color: '#00eefd',
+                    fontWeight: 700,
+                    letterSpacing: '0.8px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Admin Console
+                </span>
+              </div>
+            </Link>
+          ) : (
+            <Link
+              to="/admin"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textDecoration: 'none',
+                margin: '0 auto',
+                outline: 'none',
+              }}
+              title="FAR Admin Console"
+            >
+              <img
+                src="/far-logo-sm.png"
+                alt="FAR Logo"
+                style={{
+                  height: '30px',
+                  width: '30px',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 2px 8px rgba(0, 238, 253, 0.25))',
+                }}
+              />
+            </Link>
+          )}
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            type="button"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             style={{
-              padding: '8px 18px',
-              borderRadius: '8px',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
-              color: activeTab === tab.id ? '#fff' : 'var(--text-muted)',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid var(--border-glass)',
+              borderRadius: '6px',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              marginLeft: sidebarCollapsed ? 'auto' : '0',
+              marginRight: sidebarCollapsed ? 'auto' : '0',
+              transition: 'all 0.2s ease',
+              flexShrink: 0,
             }}
+            title={sidebarCollapsed ? 'Expand Side Menu' : 'Collapse Side Menu'}
           >
-            {tab.label}
+            {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* TAB 1: OVERVIEW */}
+        {/* Side Menu Navigation List */}
+        <nav className="admin-sidebar-nav">
+          {adminNavItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileSidebarOpen(false);
+                }}
+                className={`admin-nav-item ${isActive ? 'active' : ''}`}
+                title={sidebarCollapsed ? item.label : undefined}
+                style={{
+                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                  padding: sidebarCollapsed ? '10px 0' : '10px 14px',
+                }}
+              >
+                <span className="admin-nav-icon">{item.icon}</span>
+                {!sidebarCollapsed && (
+                  <>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
+                    {item.badge !== undefined && item.badge !== null && (
+                      <span
+                        className="admin-nav-badge"
+                        style={
+                          item.isLiveBadge
+                            ? {
+                                background: 'rgba(0, 230, 153, 0.18)',
+                                color: '#00e699',
+                                border: '1px solid rgba(0, 230, 153, 0.4)',
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }
+                            : {}
+                        }
+                      >
+                        {item.isLiveBadge && (
+                          <span
+                            style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              backgroundColor: '#00e699',
+                              boxShadow: '0 0 8px #00e699',
+                              display: 'inline-block',
+                            }}
+                          />
+                        )}
+                        {item.badge}
+                      </span>
+                    )}
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Footer with Admin Profile & Logout */}
+        <div className="admin-sidebar-footer">
+          {!sidebarCollapsed ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 6px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #00eefd 0%, #0066ff 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    color: '#000',
+                    fontSize: '0.9rem',
+                    flexShrink: 0,
+                  }}
+                >
+                  {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'A'}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: '0.84rem',
+                      fontWeight: 700,
+                      color: '#fff',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {user?.full_name || 'System Admin'}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#00e699', fontWeight: 600 }}>
+                    ● Super Administrator
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                <Link
+                  to="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="admin-footer-btn"
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-glass)',
+                    color: 'var(--text-sub)',
+                    fontSize: '0.78rem',
+                    textDecoration: 'none',
+                    transition: 'all 0.2s',
+                  }}
+                  title="Open Public User Web App in new tab"
+                >
+                  <ExternalLink size={14} />
+                  <span>User App</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }}
+                  className="admin-footer-btn logout"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 71, 87, 0.1)',
+                    border: '1px solid rgba(255, 71, 87, 0.25)',
+                    color: '#ff4757',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  title="Sign Out of Admin Console"
+                >
+                  <LogOut size={14} />
+                  <span>Exit</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <Link
+                to="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border-glass)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-sub)',
+                  textDecoration: 'none',
+                }}
+                title="Open Public User Web App"
+              >
+                <ExternalLink size={16} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 71, 87, 0.1)',
+                  border: '1px solid rgba(255, 71, 87, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ff4757',
+                  cursor: 'pointer',
+                }}
+                title="Sign Out of Admin Console"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Full-Width Content Area */}
+      <main className="admin-main-content">
+        {/* Top Header inside main view */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <button
+              type="button"
+              className="admin-mobile-toggle-btn"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              title="Toggle Menu"
+            >
+              <Menu size={20} />
+            </button>
+            <div>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px', color: '#fff' }}>
+                <ShieldCheck size={28} color="#00eefd" /> Control Panel &amp; Administration
+              </h1>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginTop: '2px' }}>
+                System overview, user moderation, task management &amp; recharge dispatch queue
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={loadData}
+              className="btn btn-secondary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                fontSize: '0.84rem',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid var(--border-glass)',
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+              title="Refresh Dashboard Data"
+            >
+              <RefreshCw size={15} />
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
@@ -558,6 +1080,350 @@ const AdminDashboard = () => {
               >
                 <Settings size={16} /> Edit Credit Rate
               </button>
+            </div>
+          </div>
+
+          {/* Real-Time Live Users & Activity Chart Section */}
+          <div
+            className="glass-card"
+            style={{
+              padding: '24px 28px',
+              background: 'linear-gradient(135deg, rgba(8, 14, 24, 0.95) 0%, rgba(13, 20, 36, 0.95) 100%)',
+              border: '1.5px solid rgba(0, 230, 153, 0.3)',
+              borderRadius: '18px',
+            }}
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '20px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'rgba(0, 230, 153, 0.15)',
+                      border: '1px solid rgba(0, 230, 153, 0.4)',
+                      borderRadius: '20px',
+                      padding: '4px 12px',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      color: '#00e699',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: '#00e699',
+                        boxShadow: '0 0 10px #00e699',
+                        display: 'inline-block',
+                      }}
+                    />
+                    REAL-TIME LIVE TELEMETRY
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>
+                    Auto-refreshes every 30s • Zero DB-load on user clients
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', margin: '4px 0' }}>
+                  Active Live Users: <span style={{ color: '#00eefd' }}>{liveStats.liveUsers} Online</span>
+                </h3>
+                <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', margin: 0 }}>
+                  Logged-in Users: <strong style={{ color: '#00e699' }}>{liveStats.liveAuthenticated}</strong> &nbsp;•&nbsp; Active Visitors: <strong style={{ color: '#fdcb6e' }}>{liveStats.liveGuests}</strong>
+                </p>
+              </div>
+
+              {/* Time Range Filter for Chart */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.05)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+                {[
+                  { id: '1h', label: '1 Hour' },
+                  { id: '6h', label: '6 Hours' },
+                  { id: '24h', label: '24 Hours' },
+                  { id: '7d', label: '7 Days' },
+                ].map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => setLiveChartRange(r.id)}
+                    style={{
+                      background: liveChartRange === r.id ? 'var(--primary)' : 'transparent',
+                      color: liveChartRange === r.id ? '#fff' : 'var(--text-muted)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Interactive SVG Chart of Live Users */}
+            <div style={{ marginTop: '16px', background: 'rgba(0, 0, 0, 0.4)', borderRadius: '14px', padding: '20px 16px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+              {liveChartLoading ? (
+                <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                  <div className="spinner" style={{ margin: '0 auto 12px auto' }} />
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading live user chart data...</p>
+                </div>
+              ) : liveChartData.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-muted)' }}>
+                  <Activity size={36} color="var(--accent)" style={{ margin: '0 auto 10px auto', display: 'block', opacity: 0.7 }} />
+                  <p style={{ fontWeight: 600, color: '#fff', marginBottom: '4px' }}>Live User Snapshot Tracker Active</p>
+                  <p style={{ fontSize: '0.85rem' }}>
+                    Currently <strong style={{ color: '#00eefd' }}>{liveStats.liveUsers}</strong> active users online. Historical time-series points are recorded every 2 minutes automatically.
+                  </p>
+                </div>
+              ) : (
+                (() => {
+                  const points = liveChartData;
+                  const maxCount = Math.max(...points.map((p) => Number(p.live_users_count) || 0), 5);
+                  const minCount = 0;
+                  const chartHeight = 220;
+                  const svgWidth = 900;
+                  const paddingX = 40;
+                  const paddingY = 25;
+                  const usableWidth = svgWidth - paddingX * 2;
+                  const usableHeight = chartHeight - paddingY * 2;
+
+                  const getX = (idx) => paddingX + (idx / Math.max(points.length - 1, 1)) * usableWidth;
+                  const getY = (val) => paddingY + usableHeight - ((val - minCount) / (maxCount - minCount || 1)) * usableHeight;
+
+                  const pathD = points
+                    .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(idx).toFixed(1)} ${getY(Number(p.live_users_count) || 0).toFixed(1)}`)
+                    .join(' ');
+
+                  const areaD = `${pathD} L ${getX(points.length - 1).toFixed(1)} ${chartHeight - paddingY} L ${getX(0).toFixed(1)} ${chartHeight - paddingY} Z`;
+
+                  return (
+                    <div>
+                      <svg viewBox={`0 0 ${svgWidth} ${chartHeight}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+                        <defs>
+                          <linearGradient id="liveChartGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#00eefd" stopOpacity="0.45" />
+                            <stop offset="100%" stopColor="#00eefd" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Horizontal Grid lines */}
+                        {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+                          const y = paddingY + usableHeight * (1 - pct);
+                          const val = Math.round(minCount + pct * (maxCount - minCount));
+                          return (
+                            <g key={i}>
+                              <line x1={paddingX} y1={y} x2={svgWidth - paddingX} y2={y} stroke="rgba(255,255,255,0.07)" strokeDasharray="3 3" />
+                              <text x={paddingX - 10} y={y + 4} fill="#64748b" fontSize="10" textAnchor="end">
+                                {val}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Shaded Area */}
+                        <path d={areaD} fill="url(#liveChartGrad)" />
+
+                        {/* Neon Line */}
+                        <path d={pathD} fill="none" stroke="#00eefd" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                        {/* Data Points */}
+                        {points.map((p, idx) => (
+                          <circle
+                            key={p.id || idx}
+                            cx={getX(idx)}
+                            cy={getY(Number(p.live_users_count) || 0)}
+                            r="4"
+                            fill="#000"
+                            stroke="#00eefd"
+                            strokeWidth="2"
+                          >
+                            <title>{`${new Date(p.timestamp).toLocaleTimeString()}: ${p.live_users_count} Users Online (${p.authenticated_count} Users, ${p.guest_count} Guests)`}</title>
+                          </circle>
+                        ))}
+                      </svg>
+
+                      {/* X-Axis Time Labels */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 30px 0 30px', color: '#64748b', fontSize: '0.75rem' }}>
+                        <span>{new Date(points[0].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        {points.length > 2 && (
+                          <span>{new Date(points[Math.floor(points.length / 2)].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        )}
+                        <span>{new Date(points[points.length - 1].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: LIVE USERS ACTIVITY DEDICATED VIEW */}
+      {activeTab === 'live_users' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Header Metric Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+            <div className="glass-card" style={{ padding: '22px', borderLeft: '4px solid #00e699' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Currently Live Users</span>
+                <Radio size={20} color="#00e699" />
+              </div>
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, marginTop: '8px', color: '#00e699' }}>
+                {liveStats.liveUsers}
+              </div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-sub)' }}>
+                Active in the last 3 minutes
+              </span>
+            </div>
+
+            <div className="glass-card" style={{ padding: '22px', borderLeft: '4px solid #00eefd' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Authenticated Users</span>
+                <Users size={20} color="#00eefd" />
+              </div>
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, marginTop: '8px', color: '#00eefd' }}>
+                {liveStats.liveAuthenticated}
+              </div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-sub)' }}>
+                Logged-in user accounts browsing
+              </span>
+            </div>
+
+            <div className="glass-card" style={{ padding: '22px', borderLeft: '4px solid #fdcb6e' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Guest Visitors</span>
+                <Activity size={20} color="#fdcb6e" />
+              </div>
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, marginTop: '8px', color: '#fdcb6e' }}>
+                {liveStats.liveGuests}
+              </div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-sub)' }}>
+                Unauthenticated visitors browsing landing / earn
+              </span>
+            </div>
+          </div>
+
+          {/* Time-Series Chart Box */}
+          <div className="glass-card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>Historical Live Traffic Graph</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem' }}>
+                  Tracks user volume peaks and valleys over time without taxing server database
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {['1h', '6h', '24h', '7d'].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setLiveChartRange(r)}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '6px 14px',
+                      fontSize: '0.8rem',
+                      borderRadius: '8px',
+                      background: liveChartRange === r ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)',
+                      color: liveChartRange === r ? '#fff' : 'var(--text-muted)',
+                    }}
+                  >
+                    {r.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Render High-Res SVG Chart */}
+            <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '12px', padding: '24px 16px', border: '1px solid var(--border-glass)' }}>
+              {liveChartLoading ? (
+                <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                  <div className="spinner" style={{ margin: '0 auto 12px auto' }} />
+                  <p style={{ color: 'var(--text-muted)' }}>Loading live analytics graph...</p>
+                </div>
+              ) : liveChartData.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                  <Radio size={40} color="#00e699" style={{ margin: '0 auto 12px auto', display: 'block' }} />
+                  <h4 style={{ color: '#fff', marginBottom: '6px' }}>Recording Live Data</h4>
+                  <p style={{ fontSize: '0.88rem', maxWidth: '420px', margin: '0 auto' }}>
+                    Currently <strong style={{ color: '#00eefd' }}>{liveStats.liveUsers} users</strong> are actively connected. Historical data points are automatically plotted every 2 minutes.
+                  </p>
+                </div>
+              ) : (
+                (() => {
+                  const points = liveChartData;
+                  const maxCount = Math.max(...points.map((p) => Number(p.live_users_count) || 0), 10);
+                  const minCount = 0;
+                  const chartHeight = 260;
+                  const svgWidth = 950;
+                  const paddingX = 40;
+                  const paddingY = 25;
+                  const usableWidth = svgWidth - paddingX * 2;
+                  const usableHeight = chartHeight - paddingY * 2;
+
+                  const getX = (idx) => paddingX + (idx / Math.max(points.length - 1, 1)) * usableWidth;
+                  const getY = (val) => paddingY + usableHeight - ((val - minCount) / (maxCount - minCount || 1)) * usableHeight;
+
+                  const pathD = points
+                    .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(idx).toFixed(1)} ${getY(Number(p.live_users_count) || 0).toFixed(1)}`)
+                    .join(' ');
+
+                  const areaD = `${pathD} L ${getX(points.length - 1).toFixed(1)} ${chartHeight - paddingY} L ${getX(0).toFixed(1)} ${chartHeight - paddingY} Z`;
+
+                  return (
+                    <div>
+                      <svg viewBox={`0 0 ${svgWidth} ${chartHeight}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+                        <defs>
+                          <linearGradient id="liveDetailGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#00e699" stopOpacity="0.45" />
+                            <stop offset="100%" stopColor="#00e699" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Grid Lines */}
+                        {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+                          const y = paddingY + usableHeight * (1 - pct);
+                          const val = Math.round(minCount + pct * (maxCount - minCount));
+                          return (
+                            <g key={i}>
+                              <line x1={paddingX} y1={y} x2={svgWidth - paddingX} y2={y} stroke="rgba(255,255,255,0.07)" strokeDasharray="3 3" />
+                              <text x={paddingX - 10} y={y + 4} fill="#64748b" fontSize="10" textAnchor="end">
+                                {val}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        <path d={areaD} fill="url(#liveDetailGrad)" />
+                        <path d={pathD} fill="none" stroke="#00e699" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                        {points.map((p, idx) => (
+                          <circle
+                            key={p.id || idx}
+                            cx={getX(idx)}
+                            cy={getY(Number(p.live_users_count) || 0)}
+                            r="4.5"
+                            fill="#000"
+                            stroke="#00e699"
+                            strokeWidth="2"
+                          >
+                            <title>{`${new Date(p.timestamp).toLocaleString()}: ${p.live_users_count} Live Users (${p.authenticated_count} Authenticated, ${p.guest_count} Guests)`}</title>
+                          </circle>
+                        ))}
+                      </svg>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 30px 0 30px', color: '#64748b', fontSize: '0.78rem' }}>
+                        <span>{new Date(points[0].timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{new Date(points[points.length - 1].timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
             </div>
           </div>
         </div>
@@ -897,16 +1763,17 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* TAB 5: CONTACT INQUIRIES & SEARCH */}
+      {/* TAB 5: SPONSORS & CONTACT INQUIRIES */}
       {activeTab === 'contacts' && (
         <div className="glass-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-                Support Inquiries &amp; Messages ({contacts.length})
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Megaphone size={20} color="var(--accent)" />
+                Sponsors, Advertisers &amp; Support Inquiries ({contacts.length})
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
-                Search submissions by keyword, phone, or email, inspect compressed attachments, and manage resolution statuses.
+                Review partner proposals, sponsor advertising campaigns, and user inquiries. Inspect compressed artwork/media and manage resolution statuses.
               </p>
             </div>
             <button
@@ -1461,6 +2328,436 @@ const AdminDashboard = () => {
             </form>
           </div>
 
+          {/* Referral Reward Rates & 2-Hour Rules Card */}
+          <div className="glass-card" style={{ padding: '28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  background: 'rgba(253, 167, 2, 0.15)',
+                  border: '1px solid #fda702',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fda702',
+                }}
+              >
+                <Users size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.3rem', margin: 0, color: '#fff' }}>
+                  Referral Reward Rates &amp; 2-Hour Rules
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+                  Configure rewards for single refer in first 2 hours vs after 2 hours. Changes reflect immediately across the entire platform.
+                </p>
+              </div>
+            </div>
+
+            {/* Current Active Status Pill */}
+            <div
+              style={{
+                marginTop: '20px',
+                padding: '16px 20px',
+                background: 'rgba(253, 167, 2, 0.08)',
+                border: '1.5px solid rgba(253, 167, 2, 0.35)',
+                borderRadius: '14px',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
+              }}
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    First 2 Hours Reward (Single Refer)
+                  </div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#fda702', marginTop: '2px' }}>
+                    +{referralSettings.bonus_reward_2h} CR
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    After 2 Hours Reward (Standard)
+                  </div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#00e699', marginTop: '2px' }}>
+                    +{referralSettings.standard_reward} CR
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Bonus Target
+                  </div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#00eefd', marginTop: '2px' }}>
+                    {referralSettings.target_referrals} Friend (Single Refer)
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                <div>Last updated by: <strong style={{ color: '#fff' }}>{referralSettings.updated_by || 'Admin'}</strong></div>
+                <div>Timestamp: <span style={{ color: 'var(--text-sub)' }}>{referralSettings.updated_at ? new Date(referralSettings.updated_at).toLocaleString() : 'System Default'}</span></div>
+              </div>
+            </div>
+
+            {/* Editor Form */}
+            <form onSubmit={handleSaveReferralSettings} style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '8px', color: '#fff' }}>
+                    Single Refer in First 2 Hours (Credits):
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={refBonus2h}
+                    onChange={(e) => setRefBonus2h(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', padding: '12px 14px', background: '#040711', fontSize: '1rem', fontWeight: 700, color: '#fda702' }}
+                    required
+                  />
+                  <span style={{ fontSize: '0.76rem', color: 'var(--text-sub)', marginTop: '4px', display: 'block' }}>
+                    Reward given to referrer for inviting during the initial 2-hour window (default: 50 CR).
+                  </span>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '8px', color: '#fff' }}>
+                    Referral Reward After 2 Hours (Credits):
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={refStandard}
+                    onChange={(e) => setRefStandard(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', padding: '12px 14px', background: '#040711', fontSize: '1rem', fontWeight: 700, color: '#00e699' }}
+                    required
+                  />
+                  <span style={{ fontSize: '0.76rem', color: 'var(--text-sub)', marginTop: '4px', display: 'block' }}>
+                    Standard ongoing reward after the 2-hour window has expired (default: 10 CR = ₹10).
+                  </span>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '8px', color: '#fff' }}>
+                    Bonus Window Duration (Hours):
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="72"
+                    value={refWindowHours}
+                    onChange={(e) => setRefWindowHours(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', padding: '12px 14px', background: '#040711', fontSize: '1rem', fontWeight: 700, color: '#fff' }}
+                    required
+                  />
+                  <span style={{ fontSize: '0.76rem', color: 'var(--text-sub)', marginTop: '4px', display: 'block' }}>
+                    Countdown duration starting from user registration (default: 2 hours).
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={refSaving}
+                  className="btn btn-primary"
+                  style={{
+                    background: 'linear-gradient(135deg, #fda702, #ff6b6b)',
+                    padding: '12px 28px',
+                    fontSize: '1rem',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 18px rgba(253, 167, 2, 0.35)',
+                    cursor: refSaving ? 'not-allowed' : 'pointer',
+                    color: '#fff',
+                  }}
+                >
+                  <Save size={18} />
+                  {refSaving ? 'Saving Referral Settings...' : 'Save & Update Referral Rules'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* WhatsApp Verification Management (wacli Bot) */}
+          <div className="glass-card" style={{ padding: '28px', border: '1px solid rgba(37, 211, 102, 0.3)', background: 'linear-gradient(180deg, rgba(37, 211, 102, 0.05) 0%, rgba(13, 20, 36, 0.6) 100%)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: 'rgba(37, 211, 102, 0.15)',
+                  border: '1px solid rgba(37, 211, 102, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <WhatsAppIcon size={24} color="#25D366" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    WhatsApp Mobile Verification (<code style={{ color: '#25D366', fontSize: '1rem' }}>wacli</code>)
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+                    Verify users' WhatsApp phone numbers automatically during signup using a local or remote WhatsApp CLI bot.
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  background: waSettings.enabled ? 'rgba(37, 211, 102, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                  color: waSettings.enabled ? '#25D366' : '#ef4444',
+                  border: `1px solid ${waSettings.enabled ? '#25D366' : '#ef4444'}`,
+                }}>
+                  {waSettings.enabled ? 'ACTIVE & ENFORCED' : 'DISABLED (OPTIONAL)'}
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveWaSettings}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+                {/* Enable toggle */}
+                <div style={{ padding: '16px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-glass)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 700, color: '#fff' }}>
+                    <input
+                      type="checkbox"
+                      checked={waSettings.enabled}
+                      onChange={(e) => setWaSettings({ ...waSettings, enabled: e.target.checked })}
+                      style={{ width: '18px', height: '18px', accentColor: '#25D366' }}
+                    />
+                    <span>Require WhatsApp Verification</span>
+                  </label>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '6px', margin: 0 }}>
+                    When enabled, users must send verification code on WhatsApp to complete signup.
+                  </p>
+                </div>
+
+                {/* Auto Reply toggle */}
+                <div style={{ padding: '16px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-glass)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 700, color: '#fff' }}>
+                    <input
+                      type="checkbox"
+                      checked={waSettings.autoReply}
+                      onChange={(e) => setWaSettings({ ...waSettings, autoReply: e.target.checked })}
+                      style={{ width: '18px', height: '18px', accentColor: '#25D366' }}
+                    />
+                    <span>Auto-Reply via wacli</span>
+                  </label>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '6px', margin: 0 }}>
+                    Sends confirmation reply "✅ Mobile number verified!" back to user.
+                  </p>
+                </div>
+
+                {/* Bot WhatsApp Number */}
+                <div className="input-group">
+                  <label className="input-label" style={{ color: '#fff', fontWeight: 700 }}>
+                    Bot WhatsApp Number (with Country Code)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="919876543210"
+                    value={waSettings.botNumber}
+                    onChange={(e) => setWaSettings({ ...waSettings, botNumber: e.target.value.replace(/[^0-9]/g, '') })}
+                    style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#fff', borderColor: 'var(--border-glass)' }}
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                    Users will click to open a chat with this number (wa.me/{waSettings.botNumber || 'YOUR_BOT'}).
+                  </small>
+                </div>
+
+                {/* Code Expiry Minutes */}
+                <div className="input-group">
+                  <label className="input-label" style={{ color: '#fff', fontWeight: 700 }}>
+                    Code Validity (Minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    className="input-field"
+                    value={waSettings.expiryMinutes}
+                    onChange={(e) => setWaSettings({ ...waSettings, expiryMinutes: Math.max(1, parseInt(e.target.value) || 15) })}
+                    style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#fff', borderColor: 'var(--border-glass)' }}
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                    Time before verification code expires (default: 15 mins).
+                  </small>
+                </div>
+
+                {/* Webhook Secret */}
+                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                  <label className="input-label" style={{ color: '#fff', fontWeight: 700 }}>
+                    Webhook Secret (Optional HMAC Token)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. your-secret-webhook-key"
+                    value={waSettings.webhookSecret || ''}
+                    onChange={(e) => setWaSettings({ ...waSettings, webhookSecret: e.target.value })}
+                    style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#fff', borderColor: 'var(--border-glass)' }}
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                    If specified, requests to <code>/api/auth/wacli/webhook</code> must provide matching <code>X-Wacli-Signature</code> or Bearer token.
+                  </small>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
+                <button
+                  type="submit"
+                  disabled={waSaving}
+                  className="btn btn-primary"
+                  style={{
+                    background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                    padding: '12px 28px',
+                    fontSize: '1rem',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 18px rgba(37, 211, 102, 0.35)',
+                    cursor: waSaving ? 'not-allowed' : 'pointer',
+                    color: '#fff',
+                  }}
+                >
+                  <Save size={18} />
+                  {waSaving ? 'Saving WhatsApp Settings...' : 'Save WhatsApp Configuration'}
+                </button>
+              </div>
+            </form>
+
+            {/* wacli Setup & Execution Guide Box */}
+            <div style={{ padding: '18px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.35)', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#25D366', fontWeight: 700 }}>
+                <Terminal size={18} />
+                <span>How to run wacli on your server:</span>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem', margin: '0 0 10px 0' }}>
+                Run this command in your terminal where <code style={{ color: '#fff' }}>wacli</code> is installed and logged in to forward incoming verification messages directly to this server:
+              </p>
+              <div style={{
+                position: 'relative',
+                background: '#0d1117',
+                padding: '12px 48px 12px 14px',
+                borderRadius: '8px',
+                fontFamily: 'Consolas, monospace',
+                fontSize: '0.85rem',
+                color: '#58a6ff',
+                overflowX: 'auto',
+                border: '1px solid #30363d',
+              }}>
+                wacli sync --follow --webhook http://localhost:5000/api/auth/wacli/webhook --webhook-allow-private
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText('wacli sync --follow --webhook http://localhost:5000/api/auth/wacli/webhook --webhook-allow-private');
+                    toast.success('wacli command copied to clipboard!');
+                  }}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: 'none',
+                    color: '#fff',
+                    padding: '6px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                  title="Copy command"
+                >
+                  <Copy size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Inbound WhatsApp Message Simulator */}
+            <div style={{ padding: '18px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(255, 255, 255, 0.15)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', color: '#fda702', fontWeight: 700 }}>
+                <Send size={18} />
+                <span>Development & Testing: Simulate WhatsApp Inbound Message</span>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0 0 12px 0' }}>
+                Test the complete flow without needing a real phone or active wacli connection. Enter the mobile number and the 6-character verification code displayed on the registration page:
+              </p>
+              <form onSubmit={handleAdminSimulateVerification} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="Mobile number (10 digits)"
+                  value={simMobile}
+                  onChange={(e) => setSimMobile(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                  style={{
+                    flex: '1 1 180px',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid var(--border-glass)',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="6-char Code (e.g. 7K4P92)"
+                  value={simCode}
+                  onChange={(e) => setSimCode(e.target.value.toUpperCase().slice(0, 6))}
+                  style={{
+                    width: '180px',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid var(--border-glass)',
+                    color: '#25D366',
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    textAlign: 'center',
+                    letterSpacing: '2px',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={simLoading}
+                  className="btn"
+                  style={{
+                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontWeight: 700,
+                    cursor: simLoading ? 'not-allowed' : 'pointer',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Send size={16} />
+                  {simLoading ? 'Simulating...' : 'Simulate Message Received'}
+                </button>
+              </form>
+            </div>
+          </div>
+
           {/* Integration & Policy Documentation Card */}
           <div className="glass-card" style={{ padding: '24px' }}>
             <h4 style={{ fontSize: '1rem', color: '#fff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1839,6 +3136,7 @@ const AdminDashboard = () => {
           </div>
         )}
       </Modal>
+      </main>
     </div>
   );
 };

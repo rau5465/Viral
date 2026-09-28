@@ -1,6 +1,7 @@
 const { User, Referral, sequelize } = require('../models');
 const { awardCredits } = require('./creditService');
 const { checkAndApplyBonusMultiplier } = require('./bonusService');
+const { getReferralSettings } = require('./settingService');
 const { getOrSet, del } = require('../config/redis');
 const AppError = require('../utils/AppError');
 
@@ -46,12 +47,17 @@ const getReferralStats = async (userId) => {
 };
 
 // Award referral reward when a referee signs up / activates
-// Within 2 hours of registration: 50 credits (5X bonus). After 2 hours: 10 credits (10 Rs).
+// Configurable by Admin in Settings (First 2 hours vs after 2 hours)
 const awardReferralReward = async (referrerId, referredUserId) => {
   const referrer = await User.findByPk(referrerId);
   const now = new Date();
   const isWithin2Hours = referrer?.bonus_deadline && now <= new Date(referrer.bonus_deadline);
-  const rewardAmount = isWithin2Hours ? 50 : 10;
+
+  // Dynamic rates configured by Admin in Settings
+  const refSettings = await getReferralSettings();
+  const rewardAmount = isWithin2Hours
+    ? (Number(refSettings.bonus_reward_2h) || 50)
+    : (Number(refSettings.standard_reward) || 10);
 
   const referral = await Referral.findOne({
     where: {
@@ -79,8 +85,8 @@ const awardReferralReward = async (referrerId, referredUserId) => {
       amount: rewardAmount,
       category: 'referral',
       description: isWithin2Hours
-        ? `🔥 5X Referral Bonus (+50 CR) for inviting ${refereeName} within 2 hours!`
-        : `Referral reward (+10 CR) for inviting ${refereeName}!`,
+        ? `🔥 Up to 5X Referral Bonus (+${rewardAmount} CR) for inviting ${refereeName} within 2 hours!`
+        : `Referral reward (+${rewardAmount} CR) for inviting ${refereeName}!`,
       referenceId: referral.id,
       transaction: t,
     });

@@ -15,6 +15,7 @@ const {
   createAnnouncement,
   deleteAnnouncement,
   getAdminLogs,
+  getLiveUserAnalytics,
 } = require('../controllers/adminController');
 const { protect, restrictTo } = require('../middleware/auth');
 
@@ -27,6 +28,7 @@ router.use(restrictTo('admin'));
 // Stats & Analytics
 router.get('/dashboard', getDashboardStats);
 router.get('/analytics', getAnalytics);
+router.get('/live-users', getLiveUserAnalytics);
 router.get('/logs', getAdminLogs);
 
 // Users

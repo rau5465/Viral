@@ -1,7 +1,8 @@
 const { User, Referral, sequelize } = require('../models');
 const { awardCredits } = require('./creditService');
+const { getReferralSettings } = require('./settingService');
 
-// Check and automatically trigger 5x bonus if eligible
+// Check and automatically trigger 5x bonus if eligible (Single Refer within 2 hours)
 const checkAndApplyBonusMultiplier = async (userId) => {
   const user = await User.findByPk(userId);
   if (!user) return { qualified: false, message: 'User not found' };
@@ -27,7 +28,8 @@ const checkAndApplyBonusMultiplier = async (userId) => {
     },
   });
 
-  const target = parseInt(process.env.BONUS_REFERRAL_TARGET, 10) || 2;
+  const refSettings = await getReferralSettings();
+  const target = Number(refSettings?.target_referrals) || 1; // Single Refer in first 2 hours!
 
   if (referralCount >= target) {
     // Eligible for 5x bonus!
@@ -43,7 +45,7 @@ const checkAndApplyBonusMultiplier = async (userId) => {
         userId: user.id,
         amount: extraReward,
         category: 'bonus_multiplier',
-        description: `🔥 5x Viral Referral Bonus unlocked! You referred ${referralCount} users within 2 hours.`,
+        description: `🔥 Up to 5x Viral Referral Bonus unlocked! You referred ${referralCount} user within 2 hours.`,
         referenceId: user.id,
         transaction: t,
       });
@@ -61,7 +63,7 @@ const checkAndApplyBonusMultiplier = async (userId) => {
     qualified: false,
     referralCount,
     target,
-    remaining: target - referralCount,
+    remaining: Math.max(0, target - referralCount),
   };
 };
 
@@ -70,10 +72,12 @@ const getBonusStatus = async (userId) => {
   const user = await User.findByPk(userId);
   if (!user) return null;
 
+  const refSettings = await getReferralSettings();
+  const target = Number(refSettings?.target_referrals) || 1; // Single Refer in first 2 hours!
+
   const now = new Date();
   const deadline = user.bonus_deadline ? new Date(user.bonus_deadline) : null;
   const isExpired = deadline ? now > deadline : true;
-  const target = parseInt(process.env.BONUS_REFERRAL_TARGET, 10) || 2;
 
   const referralCount = await Referral.count({
     where: { referrer_id: userId },
@@ -94,8 +98,8 @@ const getBonusStatus = async (userId) => {
     progressPercent: Math.min(100, Math.round((referralCount / target) * 100)),
     bonusMultiplier: 5,
     bonusPotentialCredits: 100,
-    bonusRateWithin2Hours: 50,
-    bonusRateStandard: 10,
+    bonusRateWithin2Hours: Number(refSettings?.bonus_reward_2h) || 50,
+    bonusRateStandard: Number(refSettings?.standard_reward) || 10,
   };
 };
 

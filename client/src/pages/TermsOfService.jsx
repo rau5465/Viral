@@ -120,14 +120,14 @@ const TermsOfService = () => {
         {/* Section 4 */}
         <section>
           <h2 style={{ fontSize: '1.35rem', color: '#fff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: 'var(--accent)' }}>4.</span> The 2-Hour 4X Viral Multiplier Challenge
+            <span style={{ color: 'var(--accent)' }}>4.</span> The 2-Hour Up to 5X Referral Challenge
           </h2>
           <p>
             New users receive 25 Welcome Credits upon registration. A 2-hour countdown timer begins at the exact moment of registration.
           </p>
           <ul style={{ paddingLeft: '22px', marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <li>To unlock the 4X multiplier (elevating your welcome bonus to 100 Credits), you must invite at least <strong>two (2) unique, verified users</strong> who register before the 2-hour countdown expires.</li>
-            <li>Invited users must verify their email and originate from authentic, unique IP addresses and mobile devices. Self-referrals or creating secondary accounts will immediately void the challenge and revoke bonus credits.</li>
+            <li>Get Up to 5x Rewards On Refer if you share app in next two hours — inviting a <strong>single verified user</strong> before the 2-hour countdown expires unlocks massive bonus rewards.</li>
+            <li>Invited users must verify their account and originate from authentic, unique IP addresses and mobile devices. Self-referrals or creating secondary accounts will immediately void the challenge and revoke bonus credits.</li>
           </ul>
         </section>
 
