@@ -26,7 +26,8 @@ Transaction.init(
         'recharge',
         'adjustment',
         'bonus_multiplier',
-        'multiply_game'
+        'multiply_game',
+        'spin_wheel'
       ),
       allowNull: false,
     },

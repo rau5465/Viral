@@ -13,6 +13,71 @@ export const AuthProvider = ({ children }) => {
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [securityModalReason, setSecurityModalReason] = useState('signup'); // 'signup' | 'logout' | 'manual'
 
+  // Admin Impersonation state
+  const [isImpersonating, setIsImpersonating] = useState(() => {
+    return !!localStorage.getItem('vr_admin_impersonator_token');
+  });
+  const [impersonatorAdmin, setImpersonatorAdmin] = useState(() => {
+    const savedAdmin = localStorage.getItem('vr_admin_impersonator_user');
+    return savedAdmin ? JSON.parse(savedAdmin) : null;
+  });
+
+  // Start impersonating regular user (preserves admin session)
+  const startImpersonation = (targetUserData, accessToken, refreshToken) => {
+    // Save current admin credentials to backup keys
+    if (!localStorage.getItem('vr_admin_impersonator_token') && token) {
+      localStorage.setItem('vr_admin_impersonator_token', token);
+      const currRefresh = localStorage.getItem('vr_refresh_token');
+      if (currRefresh) localStorage.setItem('vr_admin_impersonator_refresh_token', currRefresh);
+      if (user) localStorage.setItem('vr_admin_impersonator_user', JSON.stringify(user));
+      setImpersonatorAdmin(user);
+    }
+
+    // Switch active credentials to target user
+    setUser(targetUserData);
+    setToken(accessToken);
+    localStorage.setItem('vr_user', JSON.stringify(targetUserData));
+    localStorage.setItem('vr_token', accessToken);
+    if (refreshToken) {
+      localStorage.setItem('vr_refresh_token', refreshToken);
+    }
+    setIsImpersonating(true);
+  };
+
+  // Exit impersonation and restore original admin session
+  const stopImpersonation = () => {
+    const savedAdminToken = localStorage.getItem('vr_admin_impersonator_token');
+    const savedAdminRefresh = localStorage.getItem('vr_admin_impersonator_refresh_token');
+    const savedAdminUserStr = localStorage.getItem('vr_admin_impersonator_user');
+
+    if (savedAdminToken && savedAdminUserStr) {
+      const savedAdminUser = JSON.parse(savedAdminUserStr);
+      // Restore admin session
+      localStorage.setItem('vr_token', savedAdminToken);
+      localStorage.setItem('vr_user', JSON.stringify(savedAdminUser));
+      if (savedAdminRefresh) {
+        localStorage.setItem('vr_refresh_token', savedAdminRefresh);
+      } else {
+        localStorage.removeItem('vr_refresh_token');
+      }
+
+      // Clean up impersonation backup keys
+      localStorage.removeItem('vr_admin_impersonator_token');
+      localStorage.removeItem('vr_admin_impersonator_refresh_token');
+      localStorage.removeItem('vr_admin_impersonator_user');
+
+      setUser(savedAdminUser);
+      setToken(savedAdminToken);
+      setIsImpersonating(false);
+      setImpersonatorAdmin(null);
+      return savedAdminUser;
+    } else {
+      // Fallback: full logout
+      logout(true);
+      return null;
+    }
+  };
+
   // Sync state with local storage
   const handleAuthSuccess = (userData, accessToken, refreshToken) => {
     setUser(userData);
@@ -51,6 +116,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('vr_user');
       localStorage.removeItem('vr_token');
       localStorage.removeItem('vr_refresh_token');
+      localStorage.removeItem('vr_admin_impersonator_token');
+      localStorage.removeItem('vr_admin_impersonator_refresh_token');
+      localStorage.removeItem('vr_admin_impersonator_user');
+      setIsImpersonating(false);
+      setImpersonatorAdmin(null);
       sessionStorage.removeItem('far_post_signup_save_app');
       sessionStorage.removeItem('far_prompt_security_questions');
     }
@@ -142,6 +212,10 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshUser,
     updateUserBalance,
+    isImpersonating,
+    impersonatorAdmin,
+    startImpersonation,
+    stopImpersonation,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

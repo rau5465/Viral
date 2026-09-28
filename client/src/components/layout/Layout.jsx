@@ -8,6 +8,7 @@ import SecurityQuestionsModal from '../common/SecurityQuestionsModal';
 import MultiplyPromoModal from '../common/MultiplyPromoModal';
 import AnnouncementTicker from '../common/AnnouncementTicker';
 import MaintenanceBanner from '../common/MaintenanceBanner';
+import ImpersonationBanner from '../common/ImpersonationBanner';
 import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/api';
 
@@ -63,6 +64,9 @@ const Layout = ({ children }) => {
 
   return (
     <div className="layout-root">
+      {/* Impersonation Banner — displays when Admin is browsing as a user */}
+      <ImpersonationBanner />
+
       {/* Top Navbar & Notice Banner — hidden for Admin, active for users and guests */}
       {!isAdmin && <Navbar />}
       {!isAdmin && <AnnouncementTicker />}

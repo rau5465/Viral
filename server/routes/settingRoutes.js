@@ -13,6 +13,12 @@ router.get('/maintenance', settingController.getMaintenanceMode);
 // Fetch current referral reward settings
 router.get('/referral', settingController.getReferralSettings);
 
+// Fetch current spin wheel settings
+router.get('/spin', settingController.getSpinSettings);
+
+// Fetch current multiplier game settings
+router.get('/multiply', settingController.getMultiplySettings);
+
 // Fetch public active site announcements
 router.get('/announcements', settingController.getPublicAnnouncements);
 
@@ -28,6 +34,14 @@ router.post('/maintenance', protect, restrictTo('admin'), settingController.upda
 // Update referral reward settings (single refer in first 2 hours & standard reward)
 router.put('/referral', protect, restrictTo('admin'), settingController.updateReferralSettings);
 router.post('/referral', protect, restrictTo('admin'), settingController.updateReferralSettings);
+
+// Update spin wheel settings & segment values
+router.put('/spin', protect, restrictTo('admin'), settingController.updateSpinSettings);
+router.post('/spin', protect, restrictTo('admin'), settingController.updateSpinSettings);
+
+// Update multiplier game settings & limits
+router.put('/multiply', protect, restrictTo('admin'), settingController.updateMultiplySettings);
+router.post('/multiply', protect, restrictTo('admin'), settingController.updateMultiplySettings);
 
 // WhatsApp verification settings
 const {

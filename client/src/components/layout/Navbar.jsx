@@ -19,8 +19,12 @@ import {
   Users,
   Smartphone,
   Dices,
+  Radio,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
+import { YouTubeIcon } from '../common/YouTubeIcon';
 
 const Navbar = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -103,6 +107,13 @@ const Navbar = () => {
                     style={{ color: '#fde502', display: 'flex', alignItems: 'center', gap: '5px' }}
                   >
                     <span>🎲</span> Multiplier Game
+                  </NavLink>
+                  <NavLink
+                    to="/spin"
+                    className="nav-link"
+                    style={{ color: '#00eefd', display: 'flex', alignItems: 'center', gap: '5px' }}
+                  >
+                    <span>🎡</span> Spin Wheel
                   </NavLink>
 
                   {/* Submenu Dropdown for Secondary Pages (Prevents Header Clutter) */}
@@ -556,13 +567,21 @@ const Navbar = () => {
                         <LayoutDashboard size={17} color="var(--accent)" />
                         <span>Overview &amp; Analytics</span>
                       </NavLink>
+                      <NavLink to="/admin?tab=live_users" className="nav-link" onClick={closeDrawer}>
+                        <Radio size={17} color="#00e699" />
+                        <span>Live Users Activity</span>
+                      </NavLink>
                       <NavLink to="/admin?tab=users" className="nav-link" onClick={closeDrawer}>
                         <Users size={17} color="#00eefd" />
-                        <span>User Management</span>
+                        <span>User Moderation</span>
                       </NavLink>
                       <NavLink to="/admin?tab=tasks" className="nav-link" onClick={closeDrawer}>
-                        <CheckSquare size={17} color="#00e699" />
+                        <CheckSquare size={17} color="#00d2d3" />
                         <span>Tasks &amp; Earning</span>
+                      </NavLink>
+                      <NavLink to="/admin?tab=youtube" className="nav-link" onClick={closeDrawer}>
+                        <YouTubeIcon size={17} color="#ff0000" />
+                        <span>YouTube Partners</span>
                       </NavLink>
                       <NavLink to="/admin?tab=recharges" className="nav-link" onClick={closeDrawer}>
                         <Smartphone size={17} color="#fdcb6e" />
@@ -572,9 +591,21 @@ const Navbar = () => {
                         <Megaphone size={17} color="#ff7675" />
                         <span>Sponsors &amp; Inquiries</span>
                       </NavLink>
+                      <NavLink to="/admin?tab=spin_wheel" className="nav-link" onClick={closeDrawer}>
+                        <Sparkles size={17} color="#00eefd" />
+                        <span>Lucky Spin Wheel</span>
+                      </NavLink>
+                      <NavLink to="/admin?tab=multiply_game" className="nav-link" onClick={closeDrawer}>
+                        <Dices size={17} color="#fde502" />
+                        <span>Multiplier Game</span>
+                      </NavLink>
+                      <NavLink to="/admin?tab=whatsapp" className="nav-link" onClick={closeDrawer}>
+                        <WhatsAppIcon size={17} color="#25D366" />
+                        <span>WhatsApp Verification</span>
+                      </NavLink>
                       <NavLink to="/admin?tab=settings" className="nav-link" onClick={closeDrawer}>
                         <ShieldCheck size={17} color="#a29bfe" />
-                        <span>Rates &amp; Platform Settings</span>
+                        <span>Rates &amp; Referrals</span>
                       </NavLink>
                       <NavLink to="/admin?tab=announcements" className="nav-link" onClick={closeDrawer}>
                         <Megaphone size={17} color="#fbbf24" />
@@ -613,6 +644,10 @@ const Navbar = () => {
                       <NavLink to="/multiply" className="nav-link" style={{ color: '#fde502' }} onClick={closeDrawer}>
                         <Dices size={17} color="#fde502" />
                         <span>Multiplier Game</span>
+                      </NavLink>
+                      <NavLink to="/spin" className="nav-link" style={{ color: '#00eefd' }} onClick={closeDrawer}>
+                        <Sparkles size={17} color="#00eefd" />
+                        <span>Lucky Spin Wheel</span>
                       </NavLink>
 
                       <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', margin: '12px 0 4px 6px', letterSpacing: '0.06em' }}>

@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "cluster": "pm2 start ecosystem.config.js --env production",
     "db:init": "node scripts/initDb.js",
+    "db:sync": "node scripts/syncDb.js",
     "test:redis": "node scripts/testRedisOptimization.js",
     "test:youtube": "node scripts/testYouTubeSystem.js",
     "lint": "eslint .",

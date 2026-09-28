@@ -16,6 +16,7 @@ const ContactMessage = require('./ContactMessage');
 const GameRoll = require('./GameRoll');
 const PhoneVerification = require('./PhoneVerification');
 const ActiveUserSnapshot = require('./ActiveUserSnapshot');
+const UserSpin = require('./UserSpin');
 
 // 1. User <-> Referral
 User.hasMany(Referral, { foreignKey: 'referrer_id', as: 'referredUsers' });
@@ -81,6 +82,10 @@ UserYouTubeSubscription.belongsTo(PartnerChannel, { foreignKey: 'partner_channel
 User.hasMany(GameRoll, { foreignKey: 'user_id', as: 'gameRolls' });
 GameRoll.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+// 13. User <-> UserSpin (Lucky Spin Wheel Game)
+User.hasMany(UserSpin, { foreignKey: 'user_id', as: 'userSpins' });
+UserSpin.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 module.exports = {
   sequelize,
   User,
@@ -100,4 +105,5 @@ module.exports = {
   GameRoll,
   PhoneVerification,
   ActiveUserSnapshot,
+  UserSpin,
 };

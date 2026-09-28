@@ -37,15 +37,21 @@ import {
   Radio,
   LogOut,
   Menu,
+  Sparkles,
+  Dices,
+  ShieldAlert,
+  LogIn,
+  UserCheck,
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/common/Modal';
 import { WhatsAppIcon } from '../../components/common/WhatsAppIcon';
+import { YouTubeIcon } from '../../components/common/YouTubeIcon';
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, startImpersonation } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -90,6 +96,9 @@ const AdminDashboard = () => {
   const [creditAdjustment, setCreditAdjustment] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [userModalOpen, setUserModalOpen] = useState(false);
+  const [impersonateModalOpen, setImpersonateModalOpen] = useState(false);
+  const [impersonateTargetUser, setImpersonateTargetUser] = useState(null);
+  const [impersonateLoading, setImpersonateLoading] = useState(false);
 
   // Tasks state
   const [tasks, setTasks] = useState([]);
@@ -166,10 +175,59 @@ const AdminDashboard = () => {
   const [simCode, setSimCode] = useState('');
   const [simLoading, setSimLoading] = useState(false);
 
+  // Spin Wheel & Rewarded Ad Settings state
+  const DEFAULT_ADMIN_SPIN_SEGMENTS = [
+    { id: 0, label: '1 Credit', credits: 1, color: '#3a86ff', textColor: '#ffffff', weight: 25 },
+    { id: 1, label: '2 Credits', credits: 2, color: '#00e699', textColor: '#041d14', weight: 20 },
+    { id: 2, label: '5 Credits', credits: 5, color: '#fde502', textColor: '#1a1800', weight: 15 },
+    { id: 3, label: '1 Credit', credits: 1, color: '#8338ec', textColor: '#ffffff', weight: 15 },
+    { id: 4, label: '10 Credits 🔥', credits: 10, color: '#ff006e', textColor: '#ffffff', weight: 8 },
+    { id: 5, label: '1 Credit', credits: 1, color: '#00f5d4', textColor: '#03201a', weight: 10 },
+    { id: 6, label: '20 Credits 👑', credits: 20, color: '#ffbe0b', textColor: '#261b00', weight: 4 },
+    { id: 7, label: '2 Credits', credits: 2, color: '#fb5607', textColor: '#ffffff', weight: 3 },
+  ];
+
+  const [spinConfig, setSpinConfig] = useState({
+    max_daily_spins: 10,
+    ad_duration_seconds: 15,
+    enabled: true,
+    segments: DEFAULT_ADMIN_SPIN_SEGMENTS,
+    updated_at: null,
+    updated_by: 'System Administrator',
+  });
+  const [spinSaving, setSpinSaving] = useState(false);
+
+  // YouTube Partner Channels State
+  const [ytChannels, setYtChannels] = useState([]);
+  const [ytModalOpen, setYtModalOpen] = useState(false);
+  const [newYtChannel, setNewYtChannel] = useState({
+    channelId: '',
+    channelTitle: '',
+    channelHandle: '',
+    channelUrl: '',
+    thumbnailUrl: '',
+    description: '',
+    creditsReward: 50,
+  });
+  const [ytSaving, setYtSaving] = useState(false);
+
+  // Multiplier HI-LO Game State
+  const [multiplyConfig, setMultiplyConfig] = useState({
+    enabled: true,
+    min_bet: 1,
+    max_bet: 500,
+    multiplier: 2.0,
+    loss_zone_min: 4500,
+    loss_zone_max: 5500,
+    updated_at: null,
+    updated_by: 'System Administrator',
+  });
+  const [multiplySaving, setMultiplySaving] = useState(false);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsRes, usersRes, tasksRes, rechargesRes, annRes, logsRes, contactsRes, rateRes, maintenanceRes, refSettingsRes, waRes] = await Promise.all([
+      const [statsRes, usersRes, tasksRes, rechargesRes, annRes, logsRes, contactsRes, rateRes, maintenanceRes, refSettingsRes, waRes, spinRes, ytRes, multRes] = await Promise.all([
         apiService.getAdminStats(),
         apiService.getAdminUsers(),
         apiService.getAdminTasks(),
@@ -181,7 +239,30 @@ const AdminDashboard = () => {
         apiService.getMaintenanceMode().catch(() => ({ maintenance: { enabled: false } })),
         apiService.getReferralSettings().catch(() => ({ data: { referral_settings: {} } })),
         apiService.getWhatsAppVerificationSettings().catch(() => ({ data: { settings: {} } })),
+        apiService.getAdminSpinSettings().catch(() => ({ data: { spin_settings: {} } })),
+        apiService.getYouTubeChannels().catch(() => ({ data: { channels: [] } })),
+        apiService.getAdminMultiplySettings().catch(() => ({ data: { multiply_settings: {} } })),
       ]);
+
+      if (ytRes?.data?.channels) {
+        setYtChannels(ytRes.data.channels);
+      } else if (Array.isArray(ytRes?.channels)) {
+        setYtChannels(ytRes.channels);
+      }
+
+      const mc = multRes?.multiply_settings || multRes?.data?.multiply_settings;
+      if (mc) {
+        setMultiplyConfig({
+          enabled: mc.enabled !== false,
+          min_bet: mc.min_bet !== undefined ? mc.min_bet : 1,
+          max_bet: mc.max_bet !== undefined ? mc.max_bet : 500,
+          multiplier: mc.multiplier !== undefined ? mc.multiplier : 2.0,
+          loss_zone_min: mc.loss_zone_min !== undefined ? mc.loss_zone_min : 4500,
+          loss_zone_max: mc.loss_zone_max !== undefined ? mc.loss_zone_max : 5500,
+          updated_at: mc.updated_at,
+          updated_by: mc.updated_by,
+        });
+      }
 
       if (waRes.data?.settings) {
         setWaSettings((prev) => ({ ...prev, ...waRes.data.settings }));
@@ -225,6 +306,18 @@ const AdminDashboard = () => {
       if (mnt) {
         setMaintenanceEnabled(mnt.enabled || false);
         setMaintenanceMessage(mnt.message || maintenanceMessage);
+      }
+
+      const sc = spinRes?.spin_settings || spinRes?.data?.spin_settings;
+      if (sc) {
+        setSpinConfig({
+          max_daily_spins: sc.max_daily_spins ?? 10,
+          ad_duration_seconds: sc.ad_duration_seconds ?? 15,
+          enabled: sc.enabled !== false,
+          segments: Array.isArray(sc.segments) && sc.segments.length === 8 ? sc.segments : DEFAULT_ADMIN_SPIN_SEGMENTS,
+          updated_at: sc.updated_at,
+          updated_by: sc.updated_by,
+        });
       }
     } catch (err) {
       toast.error('Failed to load admin data.');
@@ -362,6 +455,129 @@ const AdminDashboard = () => {
     }
   };
 
+  // Update Lucky Spin Wheel & Rewarded Video Ad Settings
+  const handleSaveSpinConfig = async (e) => {
+    if (e) e.preventDefault();
+    setSpinSaving(true);
+    try {
+      const res = await apiService.updateAdminSpinSettings(spinConfig);
+      const sc = res?.spin_settings || res?.data?.spin_settings;
+      if (sc) {
+        setSpinConfig((prev) => ({
+          ...prev,
+          ...sc,
+          segments: Array.isArray(sc.segments) ? sc.segments : prev.segments,
+        }));
+      }
+      toast.success('Lucky Spin Wheel segment values and ad settings updated successfully!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to update spin wheel settings.');
+    } finally {
+      setSpinSaving(false);
+    }
+  };
+
+  const handleResetSpinDefaults = () => {
+    setSpinConfig((prev) => ({
+      ...prev,
+      max_daily_spins: 10,
+      ad_duration_seconds: 15,
+      enabled: true,
+      segments: DEFAULT_ADMIN_SPIN_SEGMENTS,
+    }));
+    toast.info('Spin wheel values reset to defaults. Click "Save Wheel Configuration" to apply.');
+  };
+
+  const updateSegmentField = (index, field, value) => {
+    setSpinConfig((prev) => {
+      const updated = [...prev.segments];
+      updated[index] = {
+        ...updated[index],
+        [field]: field === 'credits' || field === 'weight' ? Math.max(0, parseInt(value, 10) || 0) : value,
+      };
+      return { ...prev, segments: updated };
+    });
+  };
+
+  // YouTube Partner Channels Management Handlers
+  const handleAddYouTubeChannel = async (e) => {
+    if (e) e.preventDefault();
+    if (!newYtChannel.channelId || !newYtChannel.channelTitle || !newYtChannel.channelUrl) {
+      return toast.warning('Channel ID, Title, and URL are required.');
+    }
+    setYtSaving(true);
+    try {
+      await apiService.addYouTubeChannel({
+        channelId: newYtChannel.channelId.trim(),
+        channelTitle: newYtChannel.channelTitle.trim(),
+        channelHandle: newYtChannel.channelHandle.trim() || undefined,
+        channelUrl: newYtChannel.channelUrl.trim(),
+        thumbnailUrl: newYtChannel.thumbnailUrl.trim() || undefined,
+        description: newYtChannel.description.trim() || undefined,
+        creditsReward: Number(newYtChannel.creditsReward) || 50,
+      });
+      toast.success('YouTube Partner Channel added successfully!');
+      setYtModalOpen(false);
+      setNewYtChannel({
+        channelId: '',
+        channelTitle: '',
+        channelHandle: '',
+        channelUrl: '',
+        thumbnailUrl: '',
+        description: '',
+        creditsReward: 50,
+      });
+      const res = await apiService.getYouTubeChannels();
+      setYtChannels(res.data?.channels || res.channels || []);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to add YouTube channel.');
+    } finally {
+      setYtSaving(false);
+    }
+  };
+
+  const handleToggleYouTubeChannel = async (channel) => {
+    try {
+      await apiService.updateYouTubeChannel(channel.id, {
+        is_active: !channel.is_active,
+      });
+      toast.success(`Channel ${channel.is_active ? 'deactivated' : 'activated'}!`);
+      const res = await apiService.getYouTubeChannels();
+      setYtChannels(res.data?.channels || res.channels || []);
+    } catch (err) {
+      toast.error('Failed to update channel status.');
+    }
+  };
+
+  const handleDeleteYouTubeChannel = async (id) => {
+    if (!window.confirm('Are you sure you want to permanently delete this YouTube partner channel?')) return;
+    try {
+      await apiService.deleteYouTubeChannel(id);
+      toast.success('YouTube Partner Channel removed.');
+      setYtChannels((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      toast.error('Failed to delete partner channel.');
+    }
+  };
+
+  // Multiplier HI-LO Game Settings Handler
+  const handleSaveMultiplySettings = async (e) => {
+    if (e) e.preventDefault();
+    setMultiplySaving(true);
+    try {
+      const res = await apiService.updateAdminMultiplySettings(multiplyConfig);
+      const mc = res?.multiply_settings || res?.data?.multiply_settings;
+      if (mc) {
+        setMultiplyConfig((prev) => ({ ...prev, ...mc }));
+      }
+      toast.success('Multiplier game settings updated successfully!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to update Multiplier settings.');
+    } finally {
+      setMultiplySaving(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -491,6 +707,36 @@ const AdminDashboard = () => {
     }
   };
 
+  // Initiate Impersonation
+  const handleInitiateImpersonate = (targetUser) => {
+    if (targetUser.role === 'admin') {
+      return toast.warning('Cannot impersonate an administrator.');
+    }
+    setImpersonateTargetUser(targetUser);
+    setImpersonateModalOpen(true);
+  };
+
+  // Confirm Impersonation and switch session
+  const handleConfirmImpersonate = async () => {
+    if (!impersonateTargetUser) return;
+    setImpersonateLoading(true);
+    try {
+      const res = await apiService.impersonateUser(impersonateTargetUser.id);
+      if (res && res.token && res.user) {
+        startImpersonation(res.user, res.token, res.refreshToken);
+        toast.success(`Logged in as ${res.user.full_name}! Redirecting to Dashboard...`);
+        setImpersonateModalOpen(false);
+        navigate('/dashboard');
+      } else {
+        toast.error(res?.message || 'Failed to impersonate user.');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Error logging in as user.');
+    } finally {
+      setImpersonateLoading(false);
+    }
+  };
+
   // Create Task
   const handleCreateTask = async (e) => {
     e.preventDefault();
@@ -597,8 +843,12 @@ const AdminDashboard = () => {
     },
     { id: 'users', label: 'User Moderation', badge: users.length, icon: <Users size={18} color="#00e699" /> },
     { id: 'tasks', label: 'Tasks & Ads', badge: tasks.length, icon: <CheckSquare size={18} color="#00d2d3" /> },
+    { id: 'youtube', label: 'YouTube Partners', badge: ytChannels.length, icon: <YouTubeIcon size={18} color="#ff0000" /> },
     { id: 'recharges', label: 'Recharge Orders', badge: recharges.length, icon: <Smartphone size={18} color="#fdcb6e" /> },
     { id: 'contacts', label: 'Sponsors & Inquiries', badge: contacts.length, icon: <Megaphone size={18} color="#ff7675" /> },
+    { id: 'spin_wheel', label: 'Lucky Spin Wheel', badge: spinConfig.enabled ? 'ACTIVE' : 'OFF', icon: <Sparkles size={18} color="#00eefd" /> },
+    { id: 'multiply_game', label: 'Multiplier Game', badge: multiplyConfig.enabled ? 'ACTIVE' : 'OFF', icon: <Dices size={18} color="#fde502" /> },
+    { id: 'whatsapp', label: 'WhatsApp Verification', badge: waSettings.enabled ? 'ACTIVE' : 'OFF', icon: <WhatsAppIcon size={18} color="#25D366" /> },
     { id: 'settings', label: 'Rates & Referrals', badge: creditRate.credit_rate_display, icon: <Settings size={18} color="#a29bfe" /> },
     { id: 'announcements', label: 'Announcements', badge: announcements.length, icon: <Megaphone size={18} color="#fbbf24" /> },
     { id: 'maintenance', label: 'Maintenance Mode', badge: maintenanceEnabled ? 'ON' : null, icon: <ShieldCheck size={18} color="#fd79a8" /> },
@@ -1465,7 +1715,38 @@ const AdminDashboard = () => {
               <tbody>
                 {users.map((u) => (
                   <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px 8px', fontWeight: 600 }}>{u.full_name}</td>
+                    <td style={{ padding: '12px 8px', fontWeight: 600 }}>
+                      {u.role === 'admin' ? (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <span>{u.full_name}</span>
+                          <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(0, 230, 153, 0.15)', color: '#00e699', fontWeight: 800 }}>ADMIN</span>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleInitiateImpersonate(u)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            color: '#00eefd',
+                            fontWeight: 600,
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            textDecoration: 'underline',
+                            textUnderlineOffset: '3px',
+                          }}
+                          title={`Click name to log in as ${u.full_name}`}
+                        >
+                          <span>{u.full_name}</span>
+                          <LogIn size={13} style={{ opacity: 0.8 }} />
+                        </button>
+                      )}
+                    </td>
                     <td style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                       {u.email}<br />{u.mobile}
                     </td>
@@ -1484,7 +1765,32 @@ const AdminDashboard = () => {
                       </span>
                     </td>
                     <td style={{ padding: '12px 8px' }}>
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {u.role !== 'admin' && (
+                          <button
+                            type="button"
+                            onClick={() => handleInitiateImpersonate(u)}
+                            className="btn"
+                            style={{
+                              padding: '4px 10px',
+                              fontSize: '0.75rem',
+                              background: 'linear-gradient(135deg, #7928ca 0%, #ff0080 100%)',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 6px rgba(121, 40, 202, 0.3)',
+                            }}
+                            title={`Log in as ${u.full_name}`}
+                          >
+                            <LogIn size={12} />
+                            <span>Login As</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setSelectedUser(u);
@@ -1541,12 +1847,153 @@ const AdminDashboard = () => {
                 className="form-input"
               />
             </div>
+
+            {selectedUser.role !== 'admin' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setUserModalOpen(false);
+                  handleInitiateImpersonate(selectedUser);
+                }}
+                className="btn btn-secondary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  color: '#a29bfe',
+                  borderColor: '#6c5ce7',
+                  fontSize: '0.85rem',
+                  padding: '8px 12px',
+                }}
+              >
+                <LogIn size={14} />
+                <span>Login as {selectedUser.full_name}</span>
+              </button>
+            )}
+
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => setUserModalOpen(false)} className="btn btn-secondary" style={{ flex: 1 }}>
                 Cancel
               </button>
               <button onClick={handleAdjustCredits} className="btn btn-primary" style={{ flex: 1 }}>
                 Apply Adjustment
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Impersonate User Confirmation Modal */}
+      {impersonateTargetUser && (
+        <Modal
+          isOpen={impersonateModalOpen}
+          onClose={() => !impersonateLoading && setImpersonateModalOpen(false)}
+          title={`Login as ${impersonateTargetUser.full_name}`}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div
+              style={{
+                backgroundColor: 'rgba(121, 40, 202, 0.12)',
+                border: '1px solid rgba(121, 40, 202, 0.35)',
+                borderRadius: '10px',
+                padding: '14px',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start',
+              }}
+            >
+              <ShieldAlert size={24} color="#ffd166" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div style={{ fontSize: '0.86rem', lineHeight: '1.5' }}>
+                <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>
+                  Admin Impersonation Mode
+                </strong>
+                You are about to simulate and log into this user's session. You will experience the platform from their perspective (viewing tasks, wallet balance, spin history, and active referrals).
+              </div>
+            </div>
+
+            {/* Target User Details Summary */}
+            <div
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--border-glass)',
+                borderRadius: '8px',
+                padding: '12px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '10px',
+                fontSize: '0.84rem',
+              }}
+            >
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Full Name</span>
+                <strong style={{ color: '#fff' }}>{impersonateTargetUser.full_name}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Phone / Email</span>
+                <strong style={{ color: '#fff' }}>{impersonateTargetUser.mobile || impersonateTargetUser.email}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Current Balance</span>
+                <strong style={{ color: '#00e699' }}>{impersonateTargetUser.credit_balance} Credits</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Referral Code</span>
+                <strong style={{ color: '#fdcb6e', fontFamily: 'monospace' }}>{impersonateTargetUser.referral_code}</strong>
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-sub)',
+                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                padding: '8px 12px',
+                borderRadius: '6px',
+              }}
+            >
+              💡 <em>A sticky exit bar will remain at the top of every screen allowing you to instantly switch back to your Admin account with one click.</em>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setImpersonateModalOpen(false)}
+                disabled={impersonateLoading}
+                className="btn btn-secondary"
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmImpersonate}
+                disabled={impersonateLoading}
+                className="btn"
+                style={{
+                  flex: 1.5,
+                  background: 'linear-gradient(135deg, #7928ca 0%, #ff0080 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: impersonateLoading ? 'wait' : 'pointer',
+                }}
+              >
+                {impersonateLoading ? (
+                  <>
+                    <div className="spinner-small" />
+                    <span>Logging In...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn size={16} />
+                    <span>Proceed & Login As User</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1710,6 +2157,368 @@ const AdminDashboard = () => {
           </div>
           <button type="submit" className="btn btn-primary" style={{ padding: '12px', marginTop: '8px' }}>
             Publish Campaign
+          </button>
+        </form>
+      </Modal>
+
+      {/* TAB: YOUTUBE PARTNER CHANNELS */}
+      {activeTab === 'youtube' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Header Card */}
+          <div className="glass-card" style={{ padding: '24px 28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 0, 0, 0.15)',
+                    border: '1px solid rgba(255, 0, 0, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ff0000',
+                  }}
+                >
+                  <YouTubeIcon size={26} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.35rem', margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    YouTube Partner Channels
+                    <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(255, 0, 0, 0.2)', color: '#ff4d4d', border: '1px solid rgba(255, 0, 0, 0.3)' }}>
+                      {ytChannels.length} Registered
+                    </span>
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+                    Manage YouTube partner channels, configure subscription credit bounties, and audit live verification claims.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setYtLoading(true);
+                    try {
+                      const res = await apiService.getYouTubeChannels();
+                      setYtChannels(res.data?.channels || res.channels || []);
+                      toast.success('Channel list refreshed!');
+                    } catch (_err) {
+                      toast.error('Failed to refresh channel list.');
+                    } finally {
+                      setYtLoading(false);
+                    }
+                  }}
+                  className="btn btn-secondary"
+                  style={{ padding: '9px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <RefreshCw size={15} className={ytLoading ? 'spin' : ''} />
+                  <span>Refresh</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setYtModalOpen(true)}
+                  className="btn btn-primary"
+                  style={{
+                    background: 'linear-gradient(135deg, #ff0000, #cc0000)',
+                    padding: '9px 18px',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(255, 0, 0, 0.35)',
+                    border: 'none',
+                    color: '#fff',
+                  }}
+                >
+                  <Plus size={16} />
+                  <span>Add Partner Channel</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '20px', paddingTop: '18px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-glass)' }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Total Partner Channels</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', marginTop: '2px' }}>{ytChannels.length}</div>
+              </div>
+              <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(0, 230, 153, 0.04)', border: '1px solid rgba(0, 230, 153, 0.2)' }}>
+                <div style={{ fontSize: '0.74rem', color: '#00e699', textTransform: 'uppercase', fontWeight: 700 }}>Active Campaigns</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#00e699', marginTop: '2px' }}>
+                  {ytChannels.filter((c) => c.is_active).length}
+                </div>
+              </div>
+              <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(253, 203, 110, 0.04)', border: '1px solid rgba(253, 203, 110, 0.2)' }}>
+                <div style={{ fontSize: '0.74rem', color: '#fdcb6e', textTransform: 'uppercase', fontWeight: 700 }}>Total Verified Subscriptions</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fdcb6e', marginTop: '2px' }}>
+                  {ytChannels.reduce((sum, c) => sum + (c.verified_subscribers_count || 0), 0)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Partner Channels Table */}
+          <div className="glass-card" style={{ padding: '24px' }}>
+            <h4 style={{ fontSize: '1rem', color: '#fff', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle2 size={18} color="#00e699" /> Registered Partner Channels
+            </h4>
+
+            {ytChannels.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                <YouTubeIcon size={48} color="#ff4d4d" style={{ opacity: 0.5, marginBottom: '12px' }} />
+                <h4 style={{ color: '#fff', margin: '0 0 6px 0' }}>No YouTube Partner Channels Yet</h4>
+                <p style={{ fontSize: '0.88rem', margin: '0 0 16px 0' }}>
+                  Add a partner channel to start rewarding users who subscribe with instant recharge credits.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setYtModalOpen(true)}
+                  className="btn btn-primary"
+                  style={{ background: '#ff0000', color: '#fff', border: 'none', padding: '10px 20px', fontWeight: 700 }}
+                >
+                  + Add First Partner Channel
+                </button>
+              </div>
+            ) : (
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(255, 255, 255, 0.04)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left' }}>
+                      <th style={{ padding: '12px' }}>Channel</th>
+                      <th style={{ padding: '12px' }}>Channel ID</th>
+                      <th style={{ padding: '12px', textAlign: 'center' }}>Reward</th>
+                      <th style={{ padding: '12px', textAlign: 'center' }}>Verified Subs</th>
+                      <th style={{ padding: '12px', textAlign: 'center' }}>Status</th>
+                      <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ytChannels.map((c) => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {c.thumbnail_url ? (
+                              <img
+                                src={c.thumbnail_url}
+                                alt={c.channel_title}
+                                style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.15)' }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  width: '38px',
+                                  height: '38px',
+                                  borderRadius: '50%',
+                                  background: 'rgba(255,0,0,0.15)',
+                                  color: '#ff0000',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <YouTubeIcon size={20} />
+                              </div>
+                            )}
+                            <div>
+                              <div style={{ fontWeight: 700, color: '#fff' }}>{c.channel_title}</div>
+                              {c.channel_handle && (
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-sub)' }}>{c.channel_handle}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <code style={{ fontSize: '0.8rem', color: '#58a6ff', background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: '4px' }}>
+                              {c.channel_id}
+                            </code>
+                            {c.channel_url && (
+                              <a
+                                href={c.channel_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ color: 'var(--text-muted)' }}
+                                title="Open channel on YouTube"
+                              >
+                                <ExternalLink size={14} />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          <span className="badge badge-gold" style={{ fontSize: '0.82rem', fontWeight: 800 }}>
+                            +{c.credits_reward || 50} CR
+                          </span>
+                        </td>
+
+                        <td style={{ padding: '12px', textAlign: 'center', fontWeight: 700, color: '#00eefd' }}>
+                          {c.verified_subscribers_count || 0}
+                        </td>
+
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          <span
+                            style={{
+                              padding: '3px 8px',
+                              borderRadius: '12px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: c.is_active ? 'rgba(0, 230, 153, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                              color: c.is_active ? '#00e699' : '#ef4444',
+                              border: `1px solid ${c.is_active ? 'rgba(0, 230, 153, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                            }}
+                          >
+                            {c.is_active ? 'ACTIVE' : 'INACTIVE'}
+                          </span>
+                        </td>
+
+                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleYouTubeChannel(c)}
+                              className="btn btn-secondary"
+                              style={{ padding: '5px 10px', fontSize: '0.78rem' }}
+                              title={c.is_active ? 'Deactivate channel' : 'Activate channel'}
+                            >
+                              {c.is_active ? 'Disable' : 'Enable'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteYouTubeChannel(c.id)}
+                              className="btn btn-danger"
+                              style={{ padding: '5px 8px' }}
+                              title="Delete partner channel"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Add Partner Channel Modal */}
+      <Modal isOpen={ytModalOpen} onClose={() => setYtModalOpen(false)} title="Register YouTube Partner Channel">
+        <form onSubmit={handleAddYouTubeChannel} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="form-group">
+            <label className="form-label" style={{ color: '#fff', fontWeight: 700 }}>
+              YouTube Channel ID *
+            </label>
+            <input
+              type="text"
+              required
+              value={newYtChannel.channelId}
+              onChange={(e) => setNewYtChannel({ ...newYtChannel, channelId: e.target.value })}
+              placeholder="e.g. UC_x5XG1OV2P6uZZ5FSM9Ttw"
+              className="form-input"
+            />
+            <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+              The 24-character YouTube Channel ID starting with <code>UC</code> (from channel About page or page source).
+            </small>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" style={{ color: '#fff', fontWeight: 700 }}>
+              Channel Title *
+            </label>
+            <input
+              type="text"
+              required
+              value={newYtChannel.channelTitle}
+              onChange={(e) => setNewYtChannel({ ...newYtChannel, channelTitle: e.target.value })}
+              placeholder="e.g. Tech With Tim"
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" style={{ color: '#fff', fontWeight: 700 }}>
+              Channel URL *
+            </label>
+            <input
+              type="url"
+              required
+              value={newYtChannel.channelUrl}
+              onChange={(e) => setNewYtChannel({ ...newYtChannel, channelUrl: e.target.value })}
+              placeholder="e.g. https://www.youtube.com/@TechWithTim"
+              className="form-input"
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group">
+              <label className="form-label">Handle (Optional)</label>
+              <input
+                type="text"
+                value={newYtChannel.channelHandle}
+                onChange={(e) => setNewYtChannel({ ...newYtChannel, channelHandle: e.target.value })}
+                placeholder="@TechWithTim"
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Reward Credits</label>
+              <input
+                type="number"
+                min="1"
+                max="1000"
+                value={newYtChannel.creditsReward}
+                onChange={(e) => setNewYtChannel({ ...newYtChannel, creditsReward: e.target.value })}
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Thumbnail URL (Optional)</label>
+            <input
+              type="url"
+              value={newYtChannel.thumbnailUrl}
+              onChange={(e) => setNewYtChannel({ ...newYtChannel, thumbnailUrl: e.target.value })}
+              placeholder="https://yt3.ggpht.com/..."
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Description (Optional)</label>
+            <textarea
+              rows={2}
+              value={newYtChannel.description}
+              onChange={(e) => setNewYtChannel({ ...newYtChannel, description: e.target.value })}
+              placeholder="Brief description or partner notes..."
+              className="form-input"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={ytSaving}
+            className="btn btn-primary"
+            style={{
+              background: 'linear-gradient(135deg, #ff0000, #b30000)',
+              padding: '12px',
+              marginTop: '6px',
+              fontWeight: 800,
+              color: '#fff',
+              border: 'none',
+              cursor: ytSaving ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {ytSaving ? 'Registering...' : 'Register Partner Channel'}
           </button>
         </form>
       </Modal>
@@ -2490,6 +3299,32 @@ const AdminDashboard = () => {
             </form>
           </div>
 
+          {/* Integration & Policy Documentation Card */}
+          <div className="glass-card" style={{ padding: '24px' }}>
+            <h4 style={{ fontSize: '1rem', color: '#fff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={18} color="var(--accent)" /> Where This Rate Is Applied
+            </h4>
+            <ul style={{ paddingLeft: '20px', color: 'var(--text-muted)', fontSize: '0.88rem', display: 'flex', flexDirection: 'column', gap: '8px', margin: 0 }}>
+              <li>
+                <strong>Mobile Recharge Redeem:</strong> Displayed prominently in the available balance banner so users always see the operational exchange value.
+              </li>
+              <li>
+                <strong>User Dashboard:</strong> Displayed under the Wallet Balance card for all logged-in members.
+              </li>
+              <li>
+                <strong>Privacy Policy Compliance:</strong> Transparently recorded under Section 3 of the published Privacy Policy for complete compliance.
+              </li>
+              <li>
+                <strong>Redis Cache &amp; In-Memory Persistence:</strong> Synced instantly across all backend server instances and cached for maximum high-traffic performance.
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: WHATSAPP VERIFICATION (wacli Bot) */}
+      {activeTab === 'whatsapp' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* WhatsApp Verification Management (wacli Bot) */}
           <div className="glass-card" style={{ padding: '28px', border: '1px solid rgba(37, 211, 102, 0.3)', background: 'linear-gradient(180deg, rgba(37, 211, 102, 0.05) 0%, rgba(13, 20, 36, 0.6) 100%)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -2757,26 +3592,507 @@ const AdminDashboard = () => {
               </form>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Integration & Policy Documentation Card */}
-          <div className="glass-card" style={{ padding: '24px' }}>
-            <h4 style={{ fontSize: '1rem', color: '#fff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={18} color="var(--accent)" /> Where This Rate Is Applied
-            </h4>
-            <ul style={{ paddingLeft: '20px', color: 'var(--text-muted)', fontSize: '0.88rem', display: 'flex', flexDirection: 'column', gap: '8px', margin: 0 }}>
-              <li>
-                <strong>Mobile Recharge Redeem:</strong> Displayed prominently in the available balance banner so users always see the operational exchange value.
-              </li>
-              <li>
-                <strong>User Dashboard:</strong> Displayed under the Wallet Balance card for all logged-in members.
-              </li>
-              <li>
-                <strong>Privacy Policy Compliance:</strong> Transparently recorded under Section 3 of the published Privacy Policy for complete compliance.
-              </li>
-              <li>
-                <strong>Redis Cache &amp; In-Memory Persistence:</strong> Synced instantly across all backend server instances and cached for maximum high-traffic performance.
-              </li>
-            </ul>
+      {/* TAB: LUCKY SPIN WHEEL & REWARDED VIDEO ADS */}
+      {activeTab === 'spin_wheel' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Lucky Spin Wheel & Rewarded Video Ad Settings Card */}
+          <div className="glass-card" style={{ padding: '28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    background: 'rgba(0, 238, 253, 0.15)',
+                    border: '1px solid var(--accent)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.4rem',
+                  }}
+                >
+                  🎡
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.3rem', margin: 0, color: '#fff' }}>
+                    Lucky Spin Wheel &amp; Rewarded Ads Configuration
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+                    Customize wheel segment labels, credit payouts, probability weights, daily limits, and ad timing in real time.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    background: spinConfig.enabled ? 'rgba(0, 230, 153, 0.15)' : 'rgba(255, 0, 110, 0.15)',
+                    color: spinConfig.enabled ? '#00e699' : '#ff006e',
+                    border: spinConfig.enabled ? '1px solid #00e699' : '1px solid #ff006e',
+                  }}
+                >
+                  {spinConfig.enabled ? '● Feature Active' : '○ Paused'}
+                </span>
+              </div>
+            </div>
+
+            {/* Global Controls Form */}
+            <form onSubmit={handleSaveSpinConfig} style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: '#fff' }}>
+                    Max Daily Spins Per User:
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={spinConfig.max_daily_spins}
+                    onChange={(e) => setSpinConfig({ ...spinConfig, max_daily_spins: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                    className="form-input"
+                    style={{ width: '100%', padding: '10px 14px', background: '#040711', border: '1px solid rgba(255, 255, 255, 0.15)' }}
+                  />
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Users can watch this many ads per day for free spins
+                  </span>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: '#fff' }}>
+                    Rewarded Video Dwell Time (Seconds):
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="60"
+                    value={spinConfig.ad_duration_seconds}
+                    onChange={(e) => setSpinConfig({ ...spinConfig, ad_duration_seconds: Math.max(5, parseInt(e.target.value, 10) || 5) })}
+                    className="form-input"
+                    style={{ width: '100%', padding: '10px 14px', background: '#040711', border: '1px solid rgba(255, 255, 255, 0.15)' }}
+                  />
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Minimum watch time before 1 spin is unlocked
+                  </span>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: '#fff' }}>
+                    Spin Wheel Status:
+                  </label>
+                  <select
+                    value={spinConfig.enabled ? 'true' : 'false'}
+                    onChange={(e) => setSpinConfig({ ...spinConfig, enabled: e.target.value === 'true' })}
+                    className="form-input"
+                    style={{ width: '100%', padding: '10px 14px', background: '#040711', border: '1px solid rgba(255, 255, 255, 0.15)' }}
+                  >
+                    <option value="true">Enabled (Users can watch ads &amp; spin)</option>
+                    <option value="false">Disabled / Paused (Maintenance)</option>
+                  </select>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Instantly enables or pauses the wheel game site-wide
+                  </span>
+                </div>
+              </div>
+
+              {/* Segment Slices Configuration Table */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  <h4 style={{ fontSize: '1.05rem', margin: 0, color: '#00eefd', fontWeight: 800 }}>
+                    Wheel Slices &amp; Credit Rewards (8 Slices)
+                  </h4>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Total Weight: <strong style={{ color: '#fde502' }}>{spinConfig.segments.reduce((acc, s) => acc + (Number(s.weight) || 0), 0)}</strong>
+                  </div>
+                </div>
+
+                <div className="table-responsive" style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255, 255, 255, 0.04)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left' }}>
+                        <th style={{ padding: '10px 12px', width: '50px' }}>#</th>
+                        <th style={{ padding: '10px 12px' }}>Color</th>
+                        <th style={{ padding: '10px 12px' }}>Segment Display Label</th>
+                        <th style={{ padding: '10px 12px', width: '130px' }}>Credits Won</th>
+                        <th style={{ padding: '10px 12px', width: '130px' }}>Weight (Odds)</th>
+                        <th style={{ padding: '10px 12px', width: '110px' }}>Chance (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {spinConfig.segments.map((seg, idx) => {
+                        const totalWeight = spinConfig.segments.reduce((acc, s) => acc + (Number(s.weight) || 0), 0) || 1;
+                        const percentage = ((Number(seg.weight || 0) / totalWeight) * 100).toFixed(1);
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                            <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                              Slice {idx + 1}
+                            </td>
+
+                            {/* Color Picker & Preview */}
+                            <td style={{ padding: '10px 12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <input
+                                  type="color"
+                                  value={seg.color || '#3a86ff'}
+                                  onChange={(e) => updateSegmentField(idx, 'color', e.target.value)}
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    background: 'transparent',
+                                  }}
+                                  title="Pick slice color"
+                                />
+                                <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-sub)' }}>
+                                  {seg.color}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Label */}
+                            <td style={{ padding: '10px 12px' }}>
+                              <input
+                                type="text"
+                                value={seg.label}
+                                onChange={(e) => updateSegmentField(idx, 'label', e.target.value)}
+                                className="form-input"
+                                style={{ width: '100%', padding: '8px 10px', fontSize: '0.88rem', background: '#060912' }}
+                                placeholder="e.g. 1 Credit"
+                                required
+                              />
+                            </td>
+
+                            {/* Credits Won */}
+                            <td style={{ padding: '10px 12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="500"
+                                  value={seg.credits}
+                                  onChange={(e) => updateSegmentField(idx, 'credits', e.target.value)}
+                                  className="form-input"
+                                  style={{ width: '85px', padding: '8px 10px', fontSize: '0.88rem', fontWeight: 800, color: '#00e699', background: '#060912' }}
+                                  required
+                                />
+                                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>CR</span>
+                              </div>
+                            </td>
+
+                            {/* Weight */}
+                            <td style={{ padding: '10px 12px' }}>
+                              <input
+                                type="number"
+                                min="1"
+                                max="1000"
+                                value={seg.weight}
+                                onChange={(e) => updateSegmentField(idx, 'weight', e.target.value)}
+                                className="form-input"
+                                style={{ width: '85px', padding: '8px 10px', fontSize: '0.88rem', fontWeight: 700, background: '#060912' }}
+                                required
+                              />
+                            </td>
+
+                            {/* Calculated Probability */}
+                            <td style={{ padding: '10px 12px' }}>
+                              <span
+                                style={{
+                                  fontSize: '0.82rem',
+                                  fontWeight: 800,
+                                  color: '#fde502',
+                                  background: 'rgba(253, 229, 2, 0.1)',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                }}
+                              >
+                                ~{percentage}%
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Action Buttons: Save & Reset */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <button
+                  type="button"
+                  onClick={handleResetSpinDefaults}
+                  className="btn btn-secondary"
+                  style={{ padding: '9px 16px', fontSize: '0.86rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <RefreshCw size={15} />
+                  <span>Reset to Recommended Defaults</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={spinSaving}
+                  className="btn btn-primary"
+                  style={{
+                    padding: '11px 24px',
+                    fontSize: '0.95rem',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 0 20px rgba(0, 238, 253, 0.3)',
+                  }}
+                >
+                  <Save size={16} />
+                  <span>{spinSaving ? 'Saving Changes...' : 'Save Wheel Configuration'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: MULTIPLIER (HI-LO DICE) GAME SETTINGS */}
+      {activeTab === 'multiply_game' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Header & Status Card */}
+          <div className="glass-card" style={{ padding: '28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    background: 'rgba(253, 229, 2, 0.15)',
+                    border: '1px solid rgba(253, 229, 2, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fde502',
+                  }}
+                >
+                  <Dices size={26} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.35rem', margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    Multiplier HI-LO Game Control
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+                    Configure betting limits, win multiplier payout, and house edge loss zone to protect platform reserve solvency.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    background: multiplyConfig.enabled ? 'rgba(0, 230, 153, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    color: multiplyConfig.enabled ? '#00e699' : '#ef4444',
+                    border: `1.5px solid ${multiplyConfig.enabled ? 'rgba(0, 230, 153, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                  }}
+                >
+                  {multiplyConfig.enabled ? 'GAME ACTIVE & PLAYABLE' : 'GAME PAUSED (MAINTENANCE)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-glass)' }}>
+              <div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Min Bet</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#00eefd', marginTop: '2px' }}>{multiplyConfig.min_bet} CR</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Max Bet</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fda702', marginTop: '2px' }}>{multiplyConfig.max_bet} CR</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Payout Multiplier</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#00e699', marginTop: '2px' }}>{multiplyConfig.multiplier}x</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Dead Loss Zone</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#ff7675', marginTop: '2px' }}>
+                  {multiplyConfig.loss_zone_min} - {multiplyConfig.loss_zone_max}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>House Edge Margin</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fbbf24', marginTop: '2px' }}>
+                  {(((multiplyConfig.loss_zone_max - multiplyConfig.loss_zone_min + 1) / 10000) * 100).toFixed(2)}%
+                </div>
+              </div>
+            </div>
+
+            {/* Config Form */}
+            <form onSubmit={handleSaveMultiplySettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-glass)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontWeight: 700, color: '#fff', fontSize: '1rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={multiplyConfig.enabled}
+                    onChange={(e) => setMultiplyConfig({ ...multiplyConfig, enabled: e.target.checked })}
+                    style={{ width: '20px', height: '20px', accentColor: '#fde502' }}
+                  />
+                  <span>Enable Multiplier Game for all users</span>
+                </label>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '6px 0 0 32px' }}>
+                  Uncheck to immediately pause gameplay if market risks or credit drain anomalies occur.
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '8px', color: '#fff' }}>
+                    Minimum Bet (Credits):
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={multiplyConfig.min_bet}
+                    onChange={(e) => setMultiplyConfig({ ...multiplyConfig, min_bet: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                    className="form-input"
+                    style={{ width: '100%', padding: '12px 14px', background: '#040711', fontSize: '1rem', fontWeight: 700, color: '#00eefd' }}
+                    required
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'block', marginTop: '4px' }}>
+                    Lowest credit stake a player can place per roll (default: 1 CR).
+                  </small>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '8px', color: '#fff' }}>
+                    Maximum Bet Limit (Credits):
+                  </label>
+                  <input
+                    type="number"
+                    min="10"
+                    max="10000"
+                    value={multiplyConfig.max_bet}
+                    onChange={(e) => setMultiplyConfig({ ...multiplyConfig, max_bet: Math.max(10, parseInt(e.target.value, 10) || 500) })}
+                    className="form-input"
+                    style={{ width: '100%', padding: '12px 14px', background: '#040711', fontSize: '1rem', fontWeight: 700, color: '#fda702' }}
+                    required
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'block', marginTop: '4px' }}>
+                    Caps player max exposure to avoid rapid treasury drainage (default: 500 CR).
+                  </small>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '8px', color: '#fff' }}>
+                    Payout Multiplier (x):
+                  </label>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="1.1"
+                    max="10.0"
+                    value={multiplyConfig.multiplier}
+                    onChange={(e) => setMultiplyConfig({ ...multiplyConfig, multiplier: parseFloat(e.target.value) || 2.0 })}
+                    className="form-input"
+                    style={{ width: '100%', padding: '12px 14px', background: '#040711', fontSize: '1rem', fontWeight: 700, color: '#00e699' }}
+                    required
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'block', marginTop: '4px' }}>
+                    Multiplier payout awarded upon winning (default: 2.0x).
+                  </small>
+                </div>
+              </div>
+
+              {/* Dead Loss Zone (House Edge) */}
+              <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255, 118, 117, 0.05)', border: '1px solid rgba(255, 118, 117, 0.25)' }}>
+                <h4 style={{ fontSize: '1rem', margin: '0 0 8px 0', color: '#ff7675', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldCheck size={18} /> Dead Loss Zone (RNG 1 - 10,000)
+                </h4>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem', margin: '0 0 16px 0' }}>
+                  Any roll outcome that lands within this range results in a loss for <strong>both HI and LO</strong> bets. This constitutes the mathematical house edge.
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: '#fff' }}>
+                      Loss Zone Start (Min):
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="9999"
+                      value={multiplyConfig.loss_zone_min}
+                      onChange={(e) => setMultiplyConfig({ ...multiplyConfig, loss_zone_min: parseInt(e.target.value, 10) || 4500 })}
+                      className="form-input"
+                      style={{ width: '100%', padding: '10px 14px', background: '#040711', color: '#fff' }}
+                    />
+                    <small style={{ color: 'var(--text-sub)', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>
+                      Bet LO wins if roll &lt; {multiplyConfig.loss_zone_min}
+                    </small>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: '#fff' }}>
+                      Loss Zone End (Max):
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10000"
+                      value={multiplyConfig.loss_zone_max}
+                      onChange={(e) => setMultiplyConfig({ ...multiplyConfig, loss_zone_max: parseInt(e.target.value, 10) || 5500 })}
+                      className="form-input"
+                      style={{ width: '100%', padding: '10px 14px', background: '#040711', color: '#fff' }}
+                    />
+                    <small style={{ color: 'var(--text-sub)', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>
+                      Bet HI wins if roll &gt; {multiplyConfig.loss_zone_max}
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '8px' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Last updated by: <strong style={{ color: '#fff' }}>{multiplyConfig.updated_by || 'Admin'}</strong>
+                  {multiplyConfig.updated_at && (
+                    <span style={{ marginLeft: '8px' }}>({new Date(multiplyConfig.updated_at).toLocaleString()})</span>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={multiplySaving}
+                  className="btn btn-primary"
+                  style={{
+                    background: 'linear-gradient(135deg, #fde502, #f59e0b)',
+                    color: '#000',
+                    padding: '12px 28px',
+                    fontSize: '1rem',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    border: 'none',
+                    boxShadow: '0 4px 18px rgba(253, 229, 2, 0.35)',
+                    cursor: multiplySaving ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Save size={18} />
+                  {multiplySaving ? 'Saving Changes...' : 'Save & Update Multiplier Game'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

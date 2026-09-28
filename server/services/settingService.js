@@ -203,6 +203,168 @@ const updateReferralSettings = async ({
 };
 
 // ─────────────────────────────────────────────────────────────────────
+//  SPIN WHEEL & REWARDED AD SETTINGS
+// ─────────────────────────────────────────────────────────────────────
+
+const DEFAULT_SPIN_SEGMENTS = [
+  { id: 0, label: '1 Credit', credits: 1, color: '#3a86ff', textColor: '#ffffff', weight: 25 },
+  { id: 1, label: '2 Credits', credits: 2, color: '#00e699', textColor: '#041d14', weight: 20 },
+  { id: 2, label: '5 Credits', credits: 5, color: '#fde502', textColor: '#1a1800', weight: 15 },
+  { id: 3, label: '1 Credit', credits: 1, color: '#8338ec', textColor: '#ffffff', weight: 15 },
+  { id: 4, label: '10 Credits 🔥', credits: 10, color: '#ff006e', textColor: '#ffffff', weight: 8 },
+  { id: 5, label: '1 Credit', credits: 1, color: '#00f5d4', textColor: '#03201a', weight: 10 },
+  { id: 6, label: '20 Credits 👑', credits: 20, color: '#ffbe0b', textColor: '#261b00', weight: 4 },
+  { id: 7, label: '2 Credits', credits: 2, color: '#fb5607', textColor: '#ffffff', weight: 3 },
+];
+
+let spinSettings = {
+  max_daily_spins: 10,
+  ad_duration_seconds: 15,
+  enabled: true,
+  segments: DEFAULT_SPIN_SEGMENTS,
+  updated_at: new Date().toISOString(),
+  updated_by: 'System Administrator',
+};
+
+const SPIN_SETTINGS_CACHE_KEY = 'cache:platform:settings:spin_wheel';
+
+const getSpinSettings = async () => {
+  try {
+    const cached = await get(SPIN_SETTINGS_CACHE_KEY);
+    if (cached) return cached;
+  } catch (err) {
+    console.warn('[settingService] Redis get spin settings error:', err.message);
+  }
+
+  const dbVal = await getFromDB('spin_settings');
+  if (dbVal) {
+    spinSettings = {
+      ...spinSettings,
+      ...dbVal,
+      segments: (Array.isArray(dbVal.segments) && dbVal.segments.length > 0)
+        ? dbVal.segments
+        : DEFAULT_SPIN_SEGMENTS,
+    };
+    return spinSettings;
+  }
+
+  return spinSettings;
+};
+
+const updateSpinSettings = async ({
+  max_daily_spins,
+  ad_duration_seconds,
+  enabled,
+  segments,
+  adminName = 'Admin',
+}) => {
+  const current = (await getFromDB('spin_settings')) || spinSettings;
+
+  // Validate segments if provided
+  let updatedSegments = current.segments || DEFAULT_SPIN_SEGMENTS;
+  if (Array.isArray(segments) && segments.length === 8) {
+    updatedSegments = segments.map((s, idx) => ({
+      id: idx,
+      label: String(s.label || `${s.credits || 1} Credit`).trim(),
+      credits: Math.max(0, parseInt(s.credits, 10) || 0),
+      color: s.color || DEFAULT_SPIN_SEGMENTS[idx].color,
+      textColor: s.textColor || DEFAULT_SPIN_SEGMENTS[idx].textColor,
+      weight: Math.max(1, parseInt(s.weight, 10) || 1),
+    }));
+  }
+
+  spinSettings = {
+    max_daily_spins: Number(max_daily_spins !== undefined ? max_daily_spins : (current.max_daily_spins || 10)),
+    ad_duration_seconds: Number(ad_duration_seconds !== undefined ? ad_duration_seconds : (current.ad_duration_seconds || 15)),
+    enabled: enabled !== undefined ? Boolean(enabled) : (current.enabled !== undefined ? current.enabled : true),
+    segments: updatedSegments,
+    updated_at: new Date().toISOString(),
+    updated_by: adminName,
+  };
+
+  await saveToDB('spin_settings', spinSettings, adminName);
+
+  try {
+    await set(SPIN_SETTINGS_CACHE_KEY, spinSettings, 86400 * 30);
+  } catch (err) {
+    console.warn('[settingService] Redis set spin settings error:', err.message);
+  }
+
+  return spinSettings;
+};
+
+// ─────────────────────────────────────────────────────────────────────
+//  MULTIPLIER (HI-LO DICE) GAME SETTINGS
+// ─────────────────────────────────────────────────────────────────────
+
+const DEFAULT_MULTIPLY_SETTINGS = {
+  enabled: true,
+  min_bet: 1,
+  max_bet: 500,
+  multiplier: 2.0,
+  loss_zone_min: 4500,
+  loss_zone_max: 5500,
+  updated_at: new Date().toISOString(),
+  updated_by: 'System Administrator',
+};
+
+let multiplySettings = { ...DEFAULT_MULTIPLY_SETTINGS };
+const MULTIPLY_SETTINGS_CACHE_KEY = 'cache:platform:settings:multiply_game';
+
+const getMultiplySettings = async () => {
+  try {
+    const cached = await get(MULTIPLY_SETTINGS_CACHE_KEY);
+    if (cached) return cached;
+  } catch (err) {
+    console.warn('[settingService] Redis get multiply settings error:', err.message);
+  }
+
+  const dbVal = await getFromDB('multiply_settings');
+  if (dbVal) {
+    multiplySettings = {
+      ...DEFAULT_MULTIPLY_SETTINGS,
+      ...dbVal,
+    };
+    return multiplySettings;
+  }
+
+  return multiplySettings;
+};
+
+const updateMultiplySettings = async ({
+  enabled,
+  min_bet,
+  max_bet,
+  multiplier,
+  loss_zone_min,
+  loss_zone_max,
+  adminName = 'Admin',
+}) => {
+  const current = (await getFromDB('multiply_settings')) || multiplySettings;
+
+  multiplySettings = {
+    enabled: enabled !== undefined ? Boolean(enabled) : (current.enabled !== undefined ? current.enabled : true),
+    min_bet: min_bet !== undefined ? Math.max(1, parseInt(min_bet, 10) || 1) : (current.min_bet || 1),
+    max_bet: max_bet !== undefined ? Math.max(1, parseInt(max_bet, 10) || 500) : (current.max_bet || 500),
+    multiplier: multiplier !== undefined ? Math.max(1.1, parseFloat(multiplier) || 2.0) : (current.multiplier || 2.0),
+    loss_zone_min: loss_zone_min !== undefined ? Math.max(1, parseInt(loss_zone_min, 10) || 4500) : (current.loss_zone_min || 4500),
+    loss_zone_max: loss_zone_max !== undefined ? Math.min(10000, parseInt(loss_zone_max, 10) || 5500) : (current.loss_zone_max || 5500),
+    updated_at: new Date().toISOString(),
+    updated_by: adminName,
+  };
+
+  await saveToDB('multiply_settings', multiplySettings, adminName);
+
+  try {
+    await set(MULTIPLY_SETTINGS_CACHE_KEY, multiplySettings, 86400 * 30);
+  } catch (err) {
+    console.warn('[settingService] Redis set multiply settings error:', err.message);
+  }
+
+  return multiplySettings;
+};
+
+// ─────────────────────────────────────────────────────────────────────
 //  CACHE CLEARING
 // ─────────────────────────────────────────────────────────────────────
 
@@ -211,6 +373,8 @@ const clearPlatformCache = async () => {
     SETTINGS_CACHE_KEY,
     MAINTENANCE_CACHE_KEY,
     REFERRAL_SETTINGS_CACHE_KEY,
+    SPIN_SETTINGS_CACHE_KEY,
+    MULTIPLY_SETTINGS_CACHE_KEY,
     'cache:platform:settings:*',
   ];
   let cleared = 0;
@@ -232,6 +396,14 @@ module.exports = {
   getReferralSettings,
   updateReferralSettings,
   referralSettings,
+  getSpinSettings,
+  updateSpinSettings,
+  spinSettings,
+  DEFAULT_SPIN_SEGMENTS,
+  getMultiplySettings,
+  updateMultiplySettings,
+  multiplySettings,
+  DEFAULT_MULTIPLY_SETTINGS,
   clearPlatformCache,
   getFromDB,
   saveToDB,

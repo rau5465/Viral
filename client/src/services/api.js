@@ -174,6 +174,7 @@ export const apiService = {
   getAdminStats: () => API.get('/admin/dashboard'),
   getAdminUsers: (params = {}) => API.get('/admin/users', { params }),
   updateAdminUser: (id, data) => API.put(`/admin/users/${id}`, data),
+  impersonateUser: (id) => API.post(`/admin/users/${id}/impersonate`),
   getAdminTasks: () => API.get('/admin/tasks'),
   createAdminTask: (data) => API.post('/admin/tasks', data),
   updateAdminTask: (id, data) => API.put(`/admin/tasks/${id}`, data),
@@ -202,6 +203,13 @@ export const apiService = {
   getMyRolls: () => API.get('/multiply/my-rolls'),
   getLiveRolls: () => API.get('/multiply/live-rolls'),
   getMultiplyStats: () => API.get('/multiply/stats'),
+  getAdminMultiplySettings: () => API.get('/settings/multiply'),
+  updateAdminMultiplySettings: (data) => API.put('/settings/multiply', data),
+
+  // Lucky Spin Wheel & Rewarded Video Ads
+  getSpinStatus: () => API.get('/spin/status'),
+  claimAdSpin: (data = {}) => API.post('/spin/watch-ad', data),
+  playSpin: (spinToken) => API.post('/spin/play', { spinToken }),
 
   // Platform Settings & Credit Rate
   getCreditRate: () => API.get('/settings/credit-rate'),
@@ -214,6 +222,10 @@ export const apiService = {
   // Referral Reward Settings
   getReferralSettings: () => API.get('/settings/referral'),
   updateReferralSettings: (data) => API.put('/settings/referral', data),
+
+  // Admin Lucky Spin Wheel & Segment Settings
+  getAdminSpinSettings: () => API.get('/settings/spin'),
+  updateAdminSpinSettings: (data) => API.put('/settings/spin', data),
 
   // WhatsApp wacli Phone Verification
   initiateWhatsAppVerification: (mobile) => API.post('/auth/verify/initiate', { mobile }),

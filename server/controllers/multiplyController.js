@@ -3,6 +3,7 @@ const { invalidateUserCache } = require('../middleware/auth');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 const { inMemoryUsers } = require('./authController');
+const { getMultiplySettings } = require('../services/settingService');
 
 // In-memory fallback for degraded database mode
 const inMemoryGameRolls = [];
@@ -11,18 +12,30 @@ const inMemoryGameRolls = [];
  * Execute a Multiply Credits HI-LO Roll
  * Number Range: 1 - 10000
  * Multiplier Game Rules:
- *   - Bet HI: Wins if roll > 5500 (5501 - 10000)
- *   - Bet LO: Wins if roll < 4500 (1 - 4499)
- *   - Loss Zone: 4500 - 5500 (Always Loss for both HI and LO)
+ *   - Bet HI: Wins if roll > loss_zone_max
+ *   - Bet LO: Wins if roll < loss_zone_min
+ *   - Loss Zone: loss_zone_min - loss_zone_max (Always Loss for both HI and LO)
  */
 exports.rollDice = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
   const { bet_amount, bet_type } = req.body;
 
-  // 1. Validation
+  // 1. Fetch dynamic settings
+  const settings = await getMultiplySettings();
+  if (settings.enabled === false) {
+    return next(new AppError('The Multiplier game is temporarily paused for maintenance. Please check back shortly!', 403));
+  }
+
+  const minBet = settings.min_bet || 1;
+  const maxBet = settings.max_bet || 500;
+
+  // 2. Validation
   const bet = parseInt(bet_amount, 10);
-  if (isNaN(bet) || bet < 1) {
-    return next(new AppError('Bet amount must be at least 1 credit.', 400));
+  if (isNaN(bet) || bet < minBet) {
+    return next(new AppError(`Bet amount must be at least ${minBet} credit(s).`, 400));
+  }
+  if (bet > maxBet) {
+    return next(new AppError(`Bet amount cannot exceed ${maxBet} credits.`, 400));
   }
 
   const normalizedBetType = String(bet_type).toUpperCase();
@@ -62,23 +75,25 @@ exports.rollDice = asyncHandler(async (req, res, next) => {
   // Crypto-random or high-resolution Math.random
   const roll = Math.floor(Math.random() * 10000) + 1;
 
-  // 4. Determine Outcome with Loss Zone (4500 to 5500)
-  const inLossZone = roll >= 4500 && roll <= 5500;
+  // 4. Determine Outcome with Dynamic Loss Zone & Multiplier
+  const lossZoneMin = settings.loss_zone_min !== undefined ? settings.loss_zone_min : 4500;
+  const lossZoneMax = settings.loss_zone_max !== undefined ? settings.loss_zone_max : 5500;
+  const inLossZone = roll >= lossZoneMin && roll <= lossZoneMax;
   let isWin = false;
 
   if (normalizedBetType === 'HI') {
-    isWin = roll > 5500;
+    isWin = roll > lossZoneMax;
   } else if (normalizedBetType === 'LO') {
-    isWin = roll < 4500;
+    isWin = roll < lossZoneMin;
   }
 
-  // Multiplier: 2.0x
-  const multiplier = 2.0;
-  const payout = isWin ? bet * 2 : 0;
-  const profit = isWin ? bet : -bet;
+  // Multiplier payout (e.g. 2.0x)
+  const multiplier = Number(settings.multiplier) || 2.0;
+  const payout = isWin ? Math.round(bet * multiplier) : 0;
+  const profit = isWin ? Math.round(bet * (multiplier - 1)) : -bet;
   const balanceAfter = userRecord.credit_balance + profit;
 
-  const targetCondition = normalizedBetType === 'HI' ? '> 5500' : '< 4500';
+  const targetCondition = normalizedBetType === 'HI' ? `> ${lossZoneMax}` : `< ${lossZoneMin}`;
 
   // 5. Persist to Database or In-Memory
   let savedRoll = null;
@@ -117,8 +132,7 @@ exports.rollDice = asyncHandler(async (req, res, next) => {
           type: isWin ? 'credit' : 'debit',
           category: 'multiply_game',
           amount: Math.abs(profit),
-          balance_after: balanceAfter,
-          description: `Multiply HI-LO Roll #${roll} (${normalizedBetType}) - ${isWin ? 'WON 2X' : inLossZone ? 'LOST (Dead Zone 4500-5500)' : 'LOST'}`,
+          description: `Multiply HI-LO Roll #${roll} (${normalizedBetType}) - ${isWin ? `WON ${multiplier}X` : inLossZone ? `LOST (Dead Zone ${lossZoneMin}-${lossZoneMax})` : 'LOST'}`,
           reference_id: savedRoll.id,
         },
         { transaction: t }

@@ -53,7 +53,10 @@ async function initDatabase() {
     // 5. Run Seed Data
     const seedsDir = path.resolve(__dirname, '../../database/seeds');
     if (fs.existsSync(seedsDir)) {
-      const seedFiles = fs.readdirSync(seedsDir).filter(f => f.endsWith('.sql')).sort();
+      const seedFiles = fs
+        .readdirSync(seedsDir)
+        .filter(f => f.endsWith('.sql') && f !== 'viral.sql')
+        .sort();
       for (const file of seedFiles) {
         console.log(`🌱 Executing seed data (${file})...`);
         const seedSql = fs.readFileSync(path.join(seedsDir, file), 'utf8');

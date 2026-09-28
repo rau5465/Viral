@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CheckSquare,
   Clock,
@@ -155,6 +156,68 @@ const Tasks = () => {
             <span>Sync</span>
           </button>
         </div>
+      </div>
+
+      {/* Rewarded Video Ad Spin Wheel Banner */}
+      <div
+        className="glass-card"
+        style={{
+          padding: '16px 20px',
+          background: 'linear-gradient(135deg, rgba(0, 238, 253, 0.12) 0%, rgba(13, 27, 62, 0.9) 100%)',
+          border: '1px solid rgba(0, 238, 253, 0.4)',
+          borderRadius: '16px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '14px',
+          marginBottom: '20px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.8rem' }}>🎡</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong style={{ color: '#fff', fontSize: '1rem' }}>Want Instant Credits from Video Ads?</strong>
+              <span
+                style={{
+                  background: 'rgba(0, 230, 153, 0.2)',
+                  color: '#00e699',
+                  border: '1px solid #00e699',
+                  borderRadius: '10px',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  padding: '1px 6px',
+                }}
+              >
+                FREE
+              </span>
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              Watch a quick 15s sponsor video to spin the wheel and win up to 20 recharge credits guaranteed!
+            </div>
+          </div>
+        </div>
+
+        <Link
+          to="/spin"
+          style={{
+            background: 'linear-gradient(135deg, #00eefd 0%, #00e699 100%)',
+            color: '#031410',
+            fontWeight: 800,
+            fontSize: '0.86rem',
+            padding: '8px 18px',
+            borderRadius: '10px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span>🎡 Play Spin Wheel</span>
+          <ArrowRight size={14} />
+        </Link>
       </div>
 
       {/* Category Filter Pills */}

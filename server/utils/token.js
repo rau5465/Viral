@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
-const signToken = (id, role = 'user') => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'super_secret_viral_jwt_key_2026', {
+const signToken = (id, role = 'user', extra = {}) => {
+  return jwt.sign({ id, role, ...extra }, process.env.JWT_SECRET || 'super_secret_viral_jwt_key_2026', {
     expiresIn: process.env.JWT_EXPIRES_IN || '90d',
   });
 };

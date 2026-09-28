@@ -182,6 +182,86 @@ const Dashboard = () => {
         </Link>
       </div>
 
+      {/* Lucky Spin Wheel Rewarded Ad Strip */}
+      <div
+        className="glass-card"
+        style={{
+          padding: '20px 24px',
+          background: 'linear-gradient(135deg, rgba(0, 238, 253, 0.12) 0%, rgba(8, 14, 28, 0.95) 100%)',
+          border: '1.5px solid rgba(0, 238, 253, 0.5)',
+          borderRadius: '18px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          boxShadow: '0 8px 30px rgba(0, 238, 253, 0.18)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #00eefd 0%, #00e699 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 16px rgba(0, 238, 253, 0.6)',
+              flexShrink: 0,
+              fontSize: '1.5rem',
+            }}
+          >
+            🎡
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0 }}>
+                Lucky Spin Wheel: Free Spins on Rewarded Video Ads
+              </h3>
+              <span
+                style={{
+                  background: 'rgba(0, 230, 153, 0.2)',
+                  border: '1px solid #00e699',
+                  borderRadius: '12px',
+                  padding: '2px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  color: '#00e699',
+                }}
+              >
+                100% GUARANTEED WIN
+              </span>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+              Watch a quick 15s sponsor video to unlock 1 free spin. Win up to 20 recharge credits every time!
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/spin"
+          style={{
+            background: 'linear-gradient(135deg, #00eefd 0%, #00e699 100%)',
+            color: '#031410',
+            fontWeight: 800,
+            fontSize: '0.92rem',
+            padding: '10px 20px',
+            borderRadius: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 6px 20px rgba(0, 238, 253, 0.35)',
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span>🎡 Spin the Wheel</span>
+          <ArrowUpRight size={16} />
+        </Link>
+      </div>
+
       {/* Wallet Balance & Key Metrics Grid */}
       <div
         style={{

@@ -7,6 +7,10 @@ const {
   updateMaintenanceMode,
   getReferralSettings,
   updateReferralSettings,
+  getSpinSettings,
+  updateSpinSettings,
+  getMultiplySettings,
+  updateMultiplySettings,
   clearPlatformCache,
 } = require('../services/settingService');
 
@@ -106,6 +110,68 @@ exports.updateReferralSettings = asyncHandler(async (req, res, next) => {
     status: 'success',
     message: 'Referral reward settings updated successfully!',
     referral_settings: updated,
+  });
+});
+
+// ─── Spin Wheel Settings ──────────────────────────────────────────────────────
+
+// Public & Admin: Get spin wheel & ad settings
+exports.getSpinSettings = asyncHandler(async (req, res) => {
+  const settings = await getSpinSettings();
+  res.status(200).json({
+    status: 'success',
+    spin_settings: settings,
+  });
+});
+
+// Admin: Update spin wheel segments, rewards, and ad settings
+exports.updateSpinSettings = asyncHandler(async (req, res) => {
+  const { max_daily_spins, ad_duration_seconds, enabled, segments } = req.body;
+
+  const updated = await updateSpinSettings({
+    max_daily_spins,
+    ad_duration_seconds,
+    enabled,
+    segments,
+    adminName: req.user?.full_name || 'Admin',
+  });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Lucky Spin Wheel settings and segment rewards updated successfully!',
+    spin_settings: updated,
+  });
+});
+
+// ─── Multiplier (HI-LO) Game Settings ─────────────────────────────────────────
+
+// Public & Admin: Get multiply game settings
+exports.getMultiplySettings = asyncHandler(async (req, res) => {
+  const settings = await getMultiplySettings();
+  res.status(200).json({
+    status: 'success',
+    multiply_settings: settings,
+  });
+});
+
+// Admin: Update multiply game settings
+exports.updateMultiplySettings = asyncHandler(async (req, res) => {
+  const { enabled, min_bet, max_bet, multiplier, loss_zone_min, loss_zone_max } = req.body;
+
+  const updated = await updateMultiplySettings({
+    enabled,
+    min_bet,
+    max_bet,
+    multiplier,
+    loss_zone_min,
+    loss_zone_max,
+    adminName: req.user?.full_name || 'Admin',
+  });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Multiplier game settings updated successfully!',
+    multiply_settings: updated,
   });
 });
 

@@ -20,6 +20,7 @@ const youtubeRoutes = require('./routes/youtubeRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const multiplyRoutes = require('./routes/multiplyRoutes');
 const settingRoutes = require('./routes/settingRoutes');
+const spinRoutes = require('./routes/spinRoutes');
 
 const errorHandler = require('./middleware/errorMiddleware');
 const AppError = require('./utils/AppError');
@@ -113,6 +114,8 @@ app.use('/api/multiply', multiplyRoutes);
 app.use('/api/game', multiplyRoutes);
 app.use('/api/games', multiplyRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/spin', spinRoutes);
+app.use('/api/wheel', spinRoutes);
 
 // Static Uploads Folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

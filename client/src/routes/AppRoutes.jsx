@@ -23,6 +23,7 @@ import ContactUs from '../pages/ContactUs';
 import RechargePolicy from '../pages/RechargePolicy';
 import Partners from '../pages/Partners';
 import MultiplyGame from '../pages/MultiplyGame';
+import SpinWheelGame from '../pages/SpinWheelGame';
 
 // Route Guards
 const ProtectedRoute = ({ children }) => {
@@ -193,6 +194,30 @@ const AppRoutes = () => {
         element={
           <UserRoute>
             <MultiplyGame />
+          </UserRoute>
+        }
+      />
+      <Route
+        path="/spin"
+        element={
+          <UserRoute>
+            <SpinWheelGame />
+          </UserRoute>
+        }
+      />
+      <Route
+        path="/wheel"
+        element={
+          <UserRoute>
+            <SpinWheelGame />
+          </UserRoute>
+        }
+      />
+      <Route
+        path="/lucky-spin"
+        element={
+          <UserRoute>
+            <SpinWheelGame />
           </UserRoute>
         }
       />

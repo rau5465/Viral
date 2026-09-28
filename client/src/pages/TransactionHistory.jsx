@@ -98,6 +98,8 @@ const TransactionHistory = () => {
           style={{ width: 'auto', flex: '1 1 140px', padding: '8px 12px', fontSize: '0.85rem' }}
         >
           <option value="">All Categories</option>
+          <option value="spin_wheel">🎡 Lucky Spin Wheel</option>
+          <option value="multiply_game">🎲 Multiplier Game</option>
           <option value="signup_bonus">Signup Bonus</option>
           <option value="referral">Referral</option>
           <option value="task">Tasks</option>

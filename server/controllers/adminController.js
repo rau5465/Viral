@@ -14,6 +14,7 @@ const { invalidateTasksCache, bumpTasksVersion } = require('../services/taskServ
 const { invalidateAnnouncementsCache } = require('../services/announcementService');
 const activeUserService = require('../services/activeUserService');
 const { getOrSet, del } = require('../config/redis');
+const { signToken, signRefreshToken } = require('../utils/token');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
 
@@ -174,6 +175,84 @@ const updateUser = asyncHandler(async (req, res, next) => {
     status: 'success',
     message: 'User updated successfully.',
     user: user.toJSON(),
+  });
+});
+
+// Impersonate User (Login as user)
+const impersonateUser = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  // Prevent admin from impersonating themselves
+  if (parseInt(id, 10) === parseInt(req.user.id, 10)) {
+    return next(new AppError('You are already logged in as this administrator.', 400));
+  }
+
+  let targetUser;
+  try {
+    targetUser = await User.findByPk(id);
+  } catch (_err) {
+    const { inMemoryUsers } = require('./authController');
+    targetUser = inMemoryUsers.find((u) => u.id === parseInt(id, 10) || String(u.id) === String(id));
+  }
+
+  if (!targetUser) {
+    return next(new AppError('User not found to impersonate.', 404));
+  }
+
+  // Prevent impersonating another administrator
+  if (targetUser.role === 'admin') {
+    return next(new AppError('Cannot impersonate another administrator account.', 403));
+  }
+
+  // Generate tokens for target user with impersonation claims
+  const token = signToken(targetUser.id, targetUser.role, {
+    is_impersonated: true,
+    impersonated_by: req.user.id,
+    admin_name: req.user.full_name,
+  });
+  const refreshToken = signRefreshToken(targetUser.id);
+
+  // Optional: record session if Session model exists
+  try {
+    const { Session } = require('../models');
+    if (Session) {
+      await Session.create({
+        user_id: targetUser.id,
+        token: refreshToken,
+        ip_address: req.ip || req.headers['x-forwarded-for'] || null,
+        user_agent: req.headers['user-agent'] || null,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      });
+    }
+  } catch (_sessErr) {
+    // Non-blocking
+  }
+
+  // Audit log action
+  await logAdminAction(req.user.id, 'IMPERSONATE_USER', 'user', targetUser.id, {
+    admin_id: req.user.id,
+    admin_name: req.user.full_name,
+    target_user_id: targetUser.id,
+    target_name: targetUser.full_name,
+    target_mobile: targetUser.mobile,
+    target_email: targetUser.email,
+  });
+
+  const userData = targetUser.toJSON ? targetUser.toJSON() : { ...targetUser };
+  delete userData.password_hash;
+
+  res.status(200).json({
+    status: 'success',
+    message: `Logged in as ${targetUser.full_name}`,
+    token,
+    refreshToken,
+    user: userData,
+    impersonated_by: {
+      id: req.user.id,
+      full_name: req.user.full_name,
+      email: req.user.email,
+      mobile: req.user.mobile,
+    },
   });
 });
 
@@ -419,6 +498,7 @@ module.exports = {
   getDashboardStats,
   getUsers,
   updateUser,
+  impersonateUser,
   getAllTasks,
   createTask,
   updateTask,

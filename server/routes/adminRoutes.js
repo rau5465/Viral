@@ -3,6 +3,7 @@ const {
   getDashboardStats,
   getUsers,
   updateUser,
+  impersonateUser,
   getAllTasks,
   createTask,
   updateTask,
@@ -34,6 +35,7 @@ router.get('/logs', getAdminLogs);
 // Users
 router.get('/users', getUsers);
 router.put('/users/:id', updateUser);
+router.post('/users/:id/impersonate', impersonateUser);
 
 // Tasks
 router.get('/tasks', getAllTasks);
