@@ -90,31 +90,31 @@ const Navbar = () => {
           {isAuthenticated && !isAdmin && (
             <nav className="desktop-nav">
               <NavLink to="/dashboard" className="nav-link">
-                    Dashboard
-                  </NavLink>
-                  <NavLink to="/tasks" className="nav-link">
-                    Earn
-                  </NavLink>
-                  <NavLink to="/referrals" className="nav-link">
-                    Invite
-                  </NavLink>
-                  <NavLink to="/recharge" className="nav-link">
-                    Recharge
-                  </NavLink>
-                  <NavLink
-                    to="/multiply"
-                    className="nav-link"
-                    style={{ color: '#fde502', display: 'flex', alignItems: 'center', gap: '5px' }}
-                  >
-                    <span>🎲</span> Multiplier Game
-                  </NavLink>
-                  <NavLink
-                    to="/spin"
-                    className="nav-link"
-                    style={{ color: '#00eefd', display: 'flex', alignItems: 'center', gap: '5px' }}
-                  >
-                    <span>🎡</span> Spin Wheel
-                  </NavLink>
+                Dashboard
+              </NavLink>
+              <NavLink to="/tasks" className="nav-link">
+                Earn
+              </NavLink>
+              <NavLink to="/referrals" className="nav-link">
+                Invite
+              </NavLink>
+              <NavLink to="/recharge" className="nav-link">
+                Recharge
+              </NavLink>
+              <NavLink
+                to="/multiply"
+                className="nav-link"
+                style={{ color: '#fde502', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+              >
+                <span>🎲</span> Multiplier
+              </NavLink>
+              <NavLink
+                to="/spin"
+                className="nav-link"
+                style={{ color: '#00eefd', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+              >
+                <span>🎡</span> Spin Wheel
+              </NavLink>
 
                   {/* Submenu Dropdown for Secondary Pages (Prevents Header Clutter) */}
                   <div ref={dropdownRef} style={{ position: 'relative' }}>

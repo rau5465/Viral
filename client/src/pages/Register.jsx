@@ -40,6 +40,7 @@ const Register = () => {
     referral_code: '',
   });
 
+  const [isReferralLocked, setIsReferralLocked] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // WhatsApp wacli verification state
@@ -55,9 +56,25 @@ const Register = () => {
   });
 
   useEffect(() => {
-    const refCode = searchParams.get('ref');
-    if (refCode) {
-      setFormData((prev) => ({ ...prev, referral_code: refCode.toUpperCase() }));
+    // 1. Check URL search parameters first: ref, referral, referral_code
+    const urlRefCode = searchParams.get('ref') || searchParams.get('referral') || searchParams.get('referral_code');
+    
+    if (urlRefCode && urlRefCode.trim()) {
+      const code = urlRefCode.trim().toUpperCase();
+      // Save or overwrite in localStorage
+      localStorage.setItem('far_referral_code', code);
+      setFormData((prev) => ({ ...prev, referral_code: code }));
+      setIsReferralLocked(true);
+    } else {
+      // 2. If URL does not contain referral code, read from localStorage
+      const savedRefCode = localStorage.getItem('far_referral_code');
+      if (savedRefCode && savedRefCode.trim()) {
+        const code = savedRefCode.trim().toUpperCase();
+        setFormData((prev) => ({ ...prev, referral_code: code }));
+        setIsReferralLocked(true);
+      } else {
+        setIsReferralLocked(false);
+      }
     }
   }, [searchParams]);
 
@@ -195,6 +212,7 @@ const Register = () => {
       });
 
       handleAuthSuccess(res.user, res.token, res.refreshToken);
+      localStorage.removeItem('far_referral_code');
       sessionStorage.setItem('far_post_signup_save_app', 'true');
       sessionStorage.setItem('far_prompt_security_questions', 'true');
       toast.success('Welcome to FAR! 25 welcome bonus credits added.');
@@ -920,13 +938,13 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Referral Code (Optional) */}
+              {/* Referral Code (Optional or Locked) */}
               <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Referral Code (Optional)</span>
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{isReferralLocked ? 'Referral Code (Locked)' : 'Referral Code (Optional)'}</span>
                   {formData.referral_code && (
                     <span style={{ color: 'var(--accent)', fontSize: '0.8rem', fontWeight: 600 }}>
-                      ✓ Code Applied
+                      ✓ {isReferralLocked ? 'Applied & Locked 🔒' : 'Code Applied'}
                     </span>
                   )}
                 </label>
@@ -935,10 +953,21 @@ const Register = () => {
                     type="text"
                     name="referral_code"
                     value={formData.referral_code}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      if (!isReferralLocked) {
+                        handleChange(e);
+                      }
+                    }}
+                    disabled={isReferralLocked}
                     placeholder="e.g. VR123456"
                     className="form-input"
-                    style={{ paddingLeft: '40px', textTransform: 'uppercase' }}
+                    style={{
+                      paddingLeft: '40px',
+                      textTransform: 'uppercase',
+                      cursor: isReferralLocked ? 'not-allowed' : 'text',
+                      opacity: isReferralLocked ? 0.8 : 1,
+                      backgroundColor: isReferralLocked ? 'rgba(255, 255, 255, 0.05)' : undefined,
+                    }}
                   />
                   <Gift
                     size={18}
@@ -946,6 +975,11 @@ const Register = () => {
                     style={{ position: 'absolute', left: '12px', top: '14px' }}
                   />
                 </div>
+                {isReferralLocked && (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginTop: '4px', fontWeight: 500 }}>
+                    🔒 Referral code is locked from referral link and cannot be changed or removed.
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}

@@ -21,6 +21,13 @@ const Layout = ({ children }) => {
   // - Pauses when browser tab is inactive / minimized (visibilitychange)
   // - Heartbeat payload is minimal (< 50 bytes)
   useEffect(() => {
+    // Check for referral code in URL params and save to localStorage
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlRefCode = searchParams.get('ref') || searchParams.get('referral') || searchParams.get('referral_code');
+    if (urlRefCode && urlRefCode.trim()) {
+      localStorage.setItem('far_referral_code', urlRefCode.trim().toUpperCase());
+    }
+
     // Generate or reuse client fingerprint ID in localStorage
     let clientId = localStorage.getItem('far_client_id');
     if (!clientId) {
