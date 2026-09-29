@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viral-recharge-v1';
+const CACHE_NAME = 'viral-recharge-v4';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
