@@ -36,6 +36,7 @@ const SpinWheelGame = () => {
   const toast = useToast();
 
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [statusData, setStatusData] = useState(null);
   const [segments, setSegments] = useState(DEFAULT_SEGMENTS);
   const [hasPendingSpin, setHasPendingSpin] = useState(false);

@@ -170,7 +170,7 @@ const About = () => {
             >
               <div style={{ color: '#fdcb6e', fontWeight: 700, marginBottom: '6px' }}>2. Up to 5X Referral Rewards</div>
               <p style={{ fontSize: '0.88rem', margin: 0, color: 'var(--text-muted)' }}>
-                Get Up to 5x Rewards On Refer if you share app in next two hours, allowing your credit balance to compound quickly.
+                Earn Up to 5x Referral Reward points on first two hours, allowing your credit balance to compound quickly.
               </p>
             </div>
 

@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const { User, Referral, Transaction, Session, OtpCode, sequelize } = require('../models');
 const { signToken, signRefreshToken, verifyRefreshToken } = require('../utils/token');
 const { generateReferralCode } = require('../utils/referralCode');
+const { awardReferralReward } = require('../services/referralService');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -191,13 +192,21 @@ const register = asyncHandler(async (req, res, next) => {
           amount: signupBonus,
           balance_after: signupBonus,
           description:
-            'Welcome bonus! Refer 2 friends within 2 hours to 4x this bonus to 100 credits.',
+            'Welcome bonus! Earn up to 5x referral reward points on first two hours.',
           reference_id: newUser.id,
         },
         { transaction: t }
       );
 
       await t.commit();
+
+      if (referrer && newUser && newUser.id) {
+        try {
+          await awardReferralReward(referrer.id, newUser.id);
+        } catch (refRewardErr) {
+          console.error('Failed to award referral credits to referrer:', refRewardErr);
+        }
+      }
     } catch (txErr) {
       await t.rollback();
       throw txErr;

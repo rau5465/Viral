@@ -108,7 +108,7 @@ const Landing = () => {
       icon: <Flame size={26} color="#fda702" />,
       title: 'Up to 5X Viral Referrals',
       reward: 'Up to 5X Rewards',
-      desc: 'Get Up to 5x Rewards On Refer if you share app in next two hours! Single refer unlocks massive bonus credits.',
+      desc: 'Earn Up to 5x Referral Reward points on first two hours! Single refer unlocks massive bonus credits.',
       badgeClass: 'badge-gold',
     },
     {
@@ -158,7 +158,7 @@ const Landing = () => {
     },
     {
       q: 'How does the 2-Hour Referral Multiplier Challenge work?',
-      a: 'When you create an account, you receive 25 Free Welcome Credits instantly, and a 2-hour countdown starts on your dashboard. Get Up to 5x Rewards On Refer if you share app in next two hours — a single refer unlocks massive bonus rewards immediately!',
+      a: 'When you create an account, you receive 25 Free Welcome Credits instantly, and a 2-hour countdown starts on your dashboard. Earn Up to 5x Referral Reward points on first two hours — a single refer unlocks massive bonus rewards immediately!',
     },
     {
       q: 'How quickly is the recharge delivered to my phone?',
@@ -677,7 +677,7 @@ const Landing = () => {
           </div>
 
           <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', maxWidth: '750px' }}>
-            Get Up to 5x Rewards On Refer
+            Up to 5x Referral Reward Points
           </h2>
 
           <p
@@ -688,7 +688,7 @@ const Landing = () => {
               lineHeight: '1.7',
             }}
           >
-            Sign up today and get <strong>25 Free Credits</strong> instantly in your wallet. A 2-hour timer begins immediately. Get Up to 5x Rewards On Refer if you share app in next two hours — just <strong>1 single refer</strong> unlocks massive bonus credits!
+            Sign up today and get <strong>25 Free Credits</strong> instantly in your wallet. A 2-hour timer begins immediately. Earn Up to 5x Referral Reward points on first two hours — just <strong>1 single refer</strong> unlocks massive bonus credits!
           </p>
 
           {/* Interactive Visual Progress Bar Demo */}

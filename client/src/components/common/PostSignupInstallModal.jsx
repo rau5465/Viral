@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Smartphone, Sparkles, X, Share2, Plus, Zap, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Smartphone, Sparkles, X, Share2, Plus, Zap, CheckCircle2, ArrowRight, Laptop, Copy, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const checkIsIOS = () => {
@@ -17,6 +17,30 @@ const checkIsAndroid = () => {
   return /android/i.test(ua);
 };
 
+const checkIsMobileOrHandheld = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+  const isAndroid = /android/i.test(ua);
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isDesktopOS =
+    /Windows NT|Macintosh(?!.*Touch)|X11|Linux x86_64/i.test(ua) && !isIOS && !isAndroid;
+  if (isDesktopOS) {
+    return false;
+  }
+  const isMobileUA =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i.test(
+      ua
+    );
+  const isSmallScreen =
+    typeof window.innerWidth !== 'undefined' && window.innerWidth <= 820;
+  const hasTouch =
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+    'ontouchstart' in window;
+  return isAndroid || isIOS || isMobileUA || (isSmallScreen && hasTouch);
+};
+
 const PostSignupInstallModal = () => {
   const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +49,8 @@ const PostSignupInstallModal = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isApple, setIsApple] = useState(false);
   const [isAndroidDevice, setIsAndroidDevice] = useState(false);
+  const [isDesktopDevice, setIsDesktopDevice] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   useEffect(() => {
     // Only trigger if post-signup flag was set
@@ -40,6 +66,8 @@ const PostSignupInstallModal = () => {
       return;
     }
 
+    const mobile = checkIsMobileOrHandheld();
+    setIsDesktopDevice(!mobile);
     setIsApple(checkIsIOS());
     setIsAndroidDevice(checkIsAndroid());
 
@@ -244,6 +272,7 @@ const PostSignupInstallModal = () => {
             </div>
 
             {/* Welcome Celebration Eyebrow */}
+            {/* Welcome Celebration Eyebrow */}
             <div
               style={{
                 display: 'inline-flex',
@@ -262,161 +291,256 @@ const PostSignupInstallModal = () => {
               <span>🎉 Signup Completed • 25 Bonus Credits Added</span>
             </div>
 
-            <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#fff', marginBottom: '8px', lineHeight: 1.25 }}>
-              Save FAR to Your Phone
-            </h2>
+            {isDesktopDevice ? (
+              <>
+                <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#fff', marginBottom: '8px', lineHeight: 1.25 }}>
+                  Use FAR on Your Mobile Phone 📱
+                </h2>
 
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.86rem', lineHeight: '1.45', marginBottom: '18px' }}>
-              Keep FAR on your phone's home screen for 1-tap instant access to your free mobile recharges and daily rewards.
-            </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '18px' }}>
+                  If you want to use FAR on your mobile phone, open your mobile browser, visit the website URL, and save the app directly to your home screen for 1-tap instant recharges!
+                </p>
 
-            {/* Feature Badges */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '8px',
-                marginBottom: '20px',
-                textAlign: 'left',
-              }}
-            >
-              <div
-                style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
-                  padding: '10px 8px',
-                  textAlign: 'center',
-                }}
-              >
-                <Zap size={18} color="#00eefd" style={{ margin: '0 auto 4px auto' }} />
-                <div style={{ color: '#fff', fontSize: '0.76rem', fontWeight: 700 }}>1-Tap Access</div>
-                <div style={{ color: 'var(--text-sub)', fontSize: '0.68rem', marginTop: '2px' }}>No typing URLs</div>
-              </div>
-
-              <div
-                style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
-                  padding: '10px 8px',
-                  textAlign: 'center',
-                }}
-              >
-                <Sparkles size={18} color="#fda702" style={{ margin: '0 auto 4px auto' }} />
-                <div style={{ color: '#fff', fontSize: '0.76rem', fontWeight: 700 }}>Fast Recharges</div>
-                <div style={{ color: 'var(--text-sub)', fontSize: '0.68rem', marginTop: '2px' }}>Instant credits</div>
-              </div>
-
-              <div
-                style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
-                  padding: '10px 8px',
-                  textAlign: 'center',
-                }}
-              >
-                <Smartphone size={18} color="#00e699" style={{ margin: '0 auto 4px auto' }} />
-                <div style={{ color: '#fff', fontSize: '0.76rem', fontWeight: 700 }}>0 MB Storage</div>
-                <div style={{ color: 'var(--text-sub)', fontSize: '0.68rem', marginTop: '2px' }}>Lightweight PWA</div>
-              </div>
-            </div>
-
-            {/* Illustrated Instructions if guide requested or on iOS */}
-            {showGuide ? (
-              <div
-                style={{
-                  background: 'rgba(0, 102, 255, 0.1)',
-                  border: '1px solid rgba(0, 238, 253, 0.35)',
-                  borderRadius: '14px',
-                  padding: '14px',
-                  marginBottom: '18px',
-                  textAlign: 'left',
-                  fontSize: '0.82rem',
-                  lineHeight: '1.5',
-                  color: '#e2e8f0',
-                }}
-              >
-                <div style={{ fontWeight: 700, color: '#00eefd', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Smartphone size={16} />
-                  <span>How to add to your Home Screen:</span>
+                {/* Mobile Access Guide Box for Desktop Users */}
+                <div
+                  style={{
+                    background: 'rgba(0, 102, 255, 0.08)',
+                    border: '1px solid rgba(0, 238, 253, 0.3)',
+                    borderRadius: '16px',
+                    padding: '16px',
+                    marginBottom: '20px',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <Smartphone size={18} color="#00eefd" />
+                    <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem' }}>
+                      How to get FAR on your Phone:
+                    </span>
+                  </div>
+                  <ol style={{ margin: 0, paddingLeft: '20px', color: '#cbd5e1', fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <li>Open <strong>Chrome</strong> or <strong>Safari</strong> on your mobile phone.</li>
+                    <li>Visit: <strong style={{ color: 'var(--accent)' }}>{window.location.origin}</strong></li>
+                    <li>Log in with your mobile number and password.</li>
+                    <li>Tap <strong>"Save App to Phone"</strong> or browser menu (⋮) ➔ <strong>"Add to Home Screen"</strong>.</li>
+                  </ol>
                 </div>
-                {isApple ? (
-                  <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <li>
-                      Tap the Safari <strong>Share</strong> button (
-                      <Share2 size={13} color="#00eefd" style={{ display: 'inline', verticalAlign: 'middle' }} />
-                      ) at the bottom toolbar.
-                    </li>
-                    <li>
-                      Scroll down and tap <strong>"Add to Home Screen"</strong> (➕).
-                    </li>
-                    <li>
-                      Tap <strong>"Add"</strong> in top right corner to finish!
-                    </li>
-                  </ol>
-                ) : (
-                  <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <li>
-                      Tap your browser's <strong>menu (⋮)</strong> at the top right corner.
-                    </li>
-                    <li>
-                      Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.
-                    </li>
-                    <li>
-                      Tap <strong>"Install / Add"</strong> to save FAR to your phone!
-                    </li>
-                  </ol>
-                )}
-              </div>
-            ) : null}
 
-            {/* Primary Action Button */}
-            <button
-              onClick={handleInstallClick}
-              style={{
-                width: '100%',
-                background: 'linear-gradient(135deg, #00eefd 0%, #0066ff 100%)',
-                color: '#070b14',
-                padding: '14px 18px',
-                borderRadius: '14px',
-                fontWeight: 800,
-                fontSize: '1rem',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 8px 24px rgba(0, 102, 255, 0.45)',
-                marginBottom: '10px',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-              }}
-            >
-              <Smartphone size={18} color="#070b14" />
-              <span>{showGuide ? 'Got It! Save to Screen' : '📲 Save App to Phone Now'}</span>
-            </button>
+                {/* Copy Website URL Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.origin);
+                    setCopiedUrl(true);
+                    setTimeout(() => setCopiedUrl(false), 2500);
+                  }}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(0, 238, 253, 0.4)',
+                    color: '#fff',
+                    padding: '12px 16px',
+                    borderRadius: '14px',
+                    fontWeight: 700,
+                    fontSize: '0.92rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    marginBottom: '12px',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {copiedUrl ? <Check size={18} color="#00e699" /> : <Copy size={18} color="#00eefd" />}
+                  <span>{copiedUrl ? 'Website Link Copied! Send to Phone' : '📋 Copy Website Link for Phone'}</span>
+                </button>
 
-            {/* Secondary Dismiss Button */}
-            <button
-              onClick={handleClose}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-sub)',
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                padding: '6px 12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'color 0.2s',
-              }}
-            >
-              <span>Continue to Dashboard</span>
-              <ArrowRight size={14} />
-            </button>
+                {/* Enter Dashboard Button */}
+                <button
+                  onClick={handleClose}
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #00eefd 0%, #0066ff 100%)',
+                    color: '#070b14',
+                    padding: '14px 18px',
+                    borderRadius: '14px',
+                    fontWeight: 800,
+                    fontSize: '1rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 8px 24px rgba(0, 102, 255, 0.45)',
+                    marginBottom: '8px',
+                    transition: 'transform 0.15s, box-shadow 0.15s',
+                  }}
+                >
+                  <span>Continue to Desktop Dashboard</span>
+                  <ArrowRight size={18} color="#070b14" />
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#fff', marginBottom: '8px', lineHeight: 1.25 }}>
+                  Save FAR to Your Phone
+                </h2>
+
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.86rem', lineHeight: '1.45', marginBottom: '18px' }}>
+                  Keep FAR on your phone's home screen for 1-tap instant access to your free mobile recharges and daily rewards.
+                </p>
+
+                {/* Feature Badges */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '8px',
+                    marginBottom: '20px',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '12px',
+                      padding: '10px 8px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Zap size={18} color="#00eefd" style={{ margin: '0 auto 4px auto' }} />
+                    <div style={{ color: '#fff', fontSize: '0.76rem', fontWeight: 700 }}>1-Tap Access</div>
+                    <div style={{ color: 'var(--text-sub)', fontSize: '0.68rem', marginTop: '2px' }}>No typing URLs</div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '12px',
+                      padding: '10px 8px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Sparkles size={18} color="#fda702" style={{ margin: '0 auto 4px auto' }} />
+                    <div style={{ color: '#fff', fontSize: '0.76rem', fontWeight: 700 }}>Fast Recharges</div>
+                    <div style={{ color: 'var(--text-sub)', fontSize: '0.68rem', marginTop: '2px' }}>Instant credits</div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '12px',
+                      padding: '10px 8px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Smartphone size={18} color="#00e699" style={{ margin: '0 auto 4px auto' }} />
+                    <div style={{ color: '#fff', fontSize: '0.76rem', fontWeight: 700 }}>0 MB Storage</div>
+                    <div style={{ color: 'var(--text-sub)', fontSize: '0.68rem', marginTop: '2px' }}>Lightweight PWA</div>
+                  </div>
+                </div>
+
+                {/* Illustrated Instructions if guide requested or on iOS */}
+                {showGuide ? (
+                  <div
+                    style={{
+                      background: 'rgba(0, 102, 255, 0.1)',
+                      border: '1px solid rgba(0, 238, 253, 0.35)',
+                      borderRadius: '14px',
+                      padding: '14px',
+                      marginBottom: '18px',
+                      textAlign: 'left',
+                      fontSize: '0.82rem',
+                      lineHeight: '1.5',
+                      color: '#e2e8f0',
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, color: '#00eefd', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Smartphone size={16} />
+                      <span>How to add to your Home Screen:</span>
+                    </div>
+                    {isApple ? (
+                      <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <li>
+                          Tap the Safari <strong>Share</strong> button (
+                          <Share2 size={13} color="#00eefd" style={{ display: 'inline', verticalAlign: 'middle' }} />
+                          ) at the bottom toolbar.
+                        </li>
+                        <li>
+                          Scroll down and tap <strong>"Add to Home Screen"</strong> (➕).
+                        </li>
+                        <li>
+                          Tap <strong>"Add"</strong> in top right corner to finish!
+                        </li>
+                      </ol>
+                    ) : (
+                      <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <li>
+                          Tap your browser's <strong>menu (⋮)</strong> at the top right corner.
+                        </li>
+                        <li>
+                          Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.
+                        </li>
+                        <li>
+                          Tap <strong>"Install / Add"</strong> to save FAR to your phone!
+                        </li>
+                      </ol>
+                    )}
+                  </div>
+                ) : null}
+
+                {/* Primary Action Button */}
+                <button
+                  onClick={handleInstallClick}
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #00eefd 0%, #0066ff 100%)',
+                    color: '#070b14',
+                    padding: '14px 18px',
+                    borderRadius: '14px',
+                    fontWeight: 800,
+                    fontSize: '1rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 8px 24px rgba(0, 102, 255, 0.45)',
+                    marginBottom: '10px',
+                    transition: 'transform 0.15s, box-shadow 0.15s',
+                  }}
+                >
+                  <Smartphone size={18} color="#070b14" />
+                  <span>{showGuide ? 'Got It! Save to Screen' : '📲 Save App to Phone Now'}</span>
+                </button>
+
+                {/* Secondary Dismiss Button */}
+                <button
+                  onClick={handleClose}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-sub)',
+                    fontSize: '0.84rem',
+                    cursor: 'pointer',
+                    padding: '6px 12px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'color 0.2s',
+                  }}
+                >
+                  <span>Continue to Dashboard</span>
+                  <ArrowRight size={14} />
+                </button>
+              </>
+            )}
           </>
         )}
       </div>

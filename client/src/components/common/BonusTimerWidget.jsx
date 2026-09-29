@@ -171,11 +171,11 @@ const BonusTimerWidget = ({ bonus, referralLink, referralCode }) => {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h3 style={{ fontSize: '1.2rem', color: '#ff7675' }}>Get Up to 5x Rewards On Refer!</h3>
+              <h3 style={{ fontSize: '1.2rem', color: '#ff7675' }}>Up to 5x Referral Reward Points!</h3>
               <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>2-Hour Window</span>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '2px' }}>
-              Get Up to 5x Rewards On Refer if you share app in next two hours! Single refer unlocks massive bonus credits.
+              Earn Up to 5x Referral Reward points on first two hours! Single refer unlocks massive bonus credits.
             </p>
           </div>
         </div>

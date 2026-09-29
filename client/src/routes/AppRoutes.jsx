@@ -76,7 +76,14 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Pages */}
-      <Route path="/" element={<Landing />} />
+      <Route
+        path="/"
+        element={
+          <PublicOnlyRoute>
+            <Landing />
+          </PublicOnlyRoute>
+        }
+      />
       <Route path="/leaderboard" element={<Leaderboard />} />
       <Route path="/partners" element={<Partners />} />
       <Route path="/partner" element={<Partners />} />

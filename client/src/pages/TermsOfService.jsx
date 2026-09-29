@@ -126,7 +126,7 @@ const TermsOfService = () => {
             New users receive 25 Welcome Credits upon registration. A 2-hour countdown timer begins at the exact moment of registration.
           </p>
           <ul style={{ paddingLeft: '22px', marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <li>Get Up to 5x Rewards On Refer if you share app in next two hours — inviting a <strong>single verified user</strong> before the 2-hour countdown expires unlocks massive bonus rewards.</li>
+            <li>Earn Up to 5x Referral Reward points on first two hours — inviting a <strong>single verified user</strong> before the 2-hour countdown expires unlocks massive bonus rewards.</li>
             <li>Invited users must verify their account and originate from authentic, unique IP addresses and mobile devices. Self-referrals or creating secondary accounts will immediately void the challenge and revoke bonus credits.</li>
           </ul>
         </section>

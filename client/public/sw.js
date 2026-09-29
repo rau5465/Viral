@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viral-recharge-v4';
+const CACHE_NAME = 'viral-recharge-v5';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -36,24 +36,46 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: High-priority APIs bypass cache (Network-First / Network-Only); Assets use Cache-First / Stale-While-Revalidate
+// Fetch: High-priority APIs bypass cache (Network-Only); Assets use Stale-While-Revalidate; Navigation falls back to index.html
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // High-priority action endpoints MUST ALWAYS be network-only (no caching)
-  if (
-    url.pathname.startsWith('/api/tasks/') && (url.pathname.endsWith('/complete') || url.pathname.endsWith('/start')) ||
-    url.pathname.startsWith('/api/recharges/redeem') ||
-    url.pathname.startsWith('/api/youtube/verify') ||
-    url.pathname.startsWith('/api/auth/')
-  ) {
+  // 1. All API endpoints MUST ALWAYS be network-only (never cached by SW)
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // App Shell & Static Assets (JS, CSS, Images, Fonts, HTML)
+  // 2. SPA Navigation requests (HTML documents like /spin, /referrals, /dashboard)
+  // Network first, falling back to cached index.html
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          // If offline or network fails, try the exact cached URL, or fall back to /index.html
+          const cachedMatch = await caches.match(event.request);
+          if (cachedMatch) return cachedMatch;
+          const indexMatch = await caches.match('/index.html');
+          if (indexMatch) return indexMatch;
+          return new Response('Offline - FAR Recharge', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({ 'Content-Type': 'text/plain' }),
+          });
+        })
+    );
+    return;
+  }
+
+  // 3. Static Assets (JS, CSS, Images, Fonts)
   if (
-    event.request.destination === 'document' ||
     event.request.destination === 'script' ||
     event.request.destination === 'style' ||
     event.request.destination === 'image' ||
@@ -62,7 +84,6 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) {
-          // Return cached version immediately, fetch update in background (Stale-While-Revalidate)
           fetch(event.request)
             .then((networkResponse) => {
               if (networkResponse && networkResponse.status === 200) {
@@ -86,8 +107,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Default: Network with Cache fallback
+  // 4. Default fallback: network first, if fails then cache match or empty safe response
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      return new Response('', { status: 408, statusText: 'Request Timed Out' });
+    })
   );
 });

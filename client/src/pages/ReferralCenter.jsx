@@ -99,7 +99,7 @@ const ReferralCenter = () => {
           <Users size={28} color="var(--accent)" /> Invite &amp; Referral Program
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          Get Up to 5x Rewards On Refer if you share app in next two hours! Single refer unlocks massive bonus credits.
+          Earn Up to 5x Referral Reward points on first two hours! Single refer unlocks massive bonus credits.
         </p>
       </div>
 
@@ -114,7 +114,7 @@ const ReferralCenter = () => {
       <div className="glass-card" style={{ padding: '28px' }}>
         <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Your Exclusive Referral Link</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '18px' }}>
-          Share your personal link. Get Up to 5x Rewards on Refer if you share app in next two hours!
+          Share your personal link. Earn Up to 5x Referral Reward points on first two hours!
         </p>
 
         {/* Link Bar */}
@@ -196,10 +196,12 @@ const ReferralCenter = () => {
             <Gift size={22} color="#00b894" />
           </div>
           <div style={{ fontSize: '2.2rem', fontWeight: 800, marginTop: '8px', color: '#00b894' }}>
-            +50 CR
+            +{bonus && !bonus.isExpired ? (bonus.bonusRateWithin2Hours || 50) : (bonus?.bonusRateStandard || 10)} CR
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '6px' }}>
-            No limit on total friends invited
+            {bonus && !bonus.isExpired
+              ? `First 2 hours special (${bonus.bonusRateStandard || 10} CR standard after)`
+              : 'Standard referral reward'}
           </p>
         </div>
       </div>
@@ -241,7 +243,7 @@ const ReferralCenter = () => {
                     <CheckCircle2 size={12} /> {item.status}
                   </span>
                   <span style={{ fontWeight: 800, color: '#00b894' }}>
-                    +{item.creditsAwarded || 50} CR
+                    +{item.creditsAwarded != null ? item.creditsAwarded : (bonus?.bonusRateStandard || 10)} CR
                   </span>
                 </div>
               </div>

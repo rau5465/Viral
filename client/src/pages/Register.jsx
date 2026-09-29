@@ -512,7 +512,7 @@ const Register = () => {
               >
                 <Gift size={20} style={{ flexShrink: 0, marginTop: '2px', color: '#fda702' }} />
                 <span>
-                  <strong>Instant 25 Credits Welcome Bonus:</strong> Complete registration to instantly receive 25 free welcome credits! Share the app within 2 hours of signup to earn up to 5x boost on referral rewards.
+                  <strong>Instant 25 Credits Welcome Bonus:</strong> Complete registration to instantly receive 25 free welcome credits! Earn up to 5x referral reward points on first two hours.
                 </span>
               </div>
 
